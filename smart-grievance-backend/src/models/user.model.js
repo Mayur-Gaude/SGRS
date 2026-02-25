@@ -74,6 +74,12 @@ const userSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        area_ids: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Area",
+            },
+        ],
     },
     { timestamps: true }
 );
