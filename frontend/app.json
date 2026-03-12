@@ -41,7 +41,7 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://192.168.0.158:5000"
+      "apiUrl": "http://192.168.0.157:5000"
     },
     "experiments": {
       "typedRoutes": true,

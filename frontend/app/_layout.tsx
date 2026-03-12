@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { DrawerProvider } from "../components/SideDrawer";
 import "../global.css";
 
@@ -16,6 +17,8 @@ console.warn = (...args) => {
 
 export default function RootLayout() {
   return (
+    <>
+    <StatusBar hidden/>
     <DrawerProvider>
       <Stack>
         <Stack.Screen 
@@ -46,15 +49,28 @@ export default function RootLayout() {
           name="citizen/forgot-password" 
           options={{ headerShown: false }} 
         />
+        <Stack.Screen 
+          name="citizen/verify-otp" 
+          options={{ headerShown: false }} 
+        />
          <Stack.Screen 
           name="admin/index" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="admin/dashboard" 
           options={{ headerShown: false }} 
         />
          <Stack.Screen 
           name="super-admin/index" 
           options={{ headerShown: false }} 
         />
+        <Stack.Screen 
+          name="super-admin/dashboard" 
+          options={{ headerShown: false }} 
+        />
       </Stack>
     </DrawerProvider>
+    </>
   );
 }

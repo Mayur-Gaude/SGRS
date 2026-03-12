@@ -1,3 +1,7 @@
+// Resend OTP for forgot password
+export async function resendOtpApi(payload: { user_id: string; otp_type: string }) {
+  return api.post('/api/auth/resend-otp', payload);
+}
 import api from './api';
 
 export interface RegisterPayload {

@@ -45,9 +45,13 @@ export default function CitizenSignup() {
     setLoading(true);
     try {
       console.log("REGISTER PAYLOAD:", { full_name: fullName, email: email.trim(), phone: normalized, password });
-      await registerApi({ full_name: fullName, email: email.trim(), phone: normalized, password });
+      const res = await registerApi({ full_name: fullName, email: email.trim(), phone: normalized, password });
+      const userId = res?.data?.user_id;
       Alert.alert('Success', 'Registration successful. Please verify OTP sent to your contact.');
-      router.replace('/citizen/dashboard');
+      router.replace({
+        pathname: '/citizen/verify-otp',
+        params: { user_id: userId, email: email.trim() },
+      });
     } catch (e: any) {
       Alert.alert('Registration failed', e?.message || 'Unable to register');
     } finally {

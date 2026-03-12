@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { resendOtpApi } from '../../lib/auth';
 import {
   SafeAreaView,
   Text,
@@ -30,6 +31,46 @@ export default function ForgotPassword() {
   const [resetToken, setResetToken] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
+
+  // Timer state for OTP resend
+  const [timer, setTimer] = useState(300); // 5 minutes in seconds
+  const [canResend, setCanResend] = useState(false);
+  const [otpExpired, setOtpExpired] = useState(false);
+  // For React Native, setInterval returns number, not NodeJS.Timeout
+  const timerRef = useRef<number | null>(null);
+
+  // Start timer when OTP step is active
+  useEffect(() => {
+    if (step === 'otp') {
+      setTimer(300);
+      setCanResend(false);
+      setOtpExpired(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            setCanResend(true);
+            setOtpExpired(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [step]);
+
+  // Format timer mm:ss
+  const formatTimer = (t: number) => {
+    const m = Math.floor(t / 60).toString().padStart(2, '0');
+    const s = (t % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   // STEP 1: SEND OTP
   const handleSendOtp = async () => {
@@ -63,28 +104,27 @@ export default function ForgotPassword() {
 
   // STEP 2: VERIFY OTP
   const handleVerifyOtp = async () => {
+    if (otpExpired) {
+      Alert.alert('OTP Expired', 'Please request a new OTP.');
+      return;
+    }
     if (!otp || otp.length !== 6) {
       Alert.alert('Invalid OTP', 'Enter 6-digit OTP');
       return;
     }
-
     if (!userId) {
       Alert.alert('Error', 'User not found. Restart process.');
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await verifyResetOtp({
         user_id: userId,
         otp_code: otp,
       });
-
       console.log("VERIFY RESPONSE:", res.data);
       const token = res.data.reset_token;
       setResetToken(token);
-
       Alert.alert('Success', 'OTP verified successfully');
       setStep('reset');
     } catch (error: any) {
@@ -145,9 +185,7 @@ export default function ForgotPassword() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 px-6 pt-10">
-      <Text className="text-2xl font-bold mb-6 text-black">
-        Forgot Password
-      </Text>
+      <Text className="text-2xl font-bold mb-6 text-black">Forgot Password</Text>
 
       {step === 'email' && (
         <>
@@ -159,7 +197,6 @@ export default function ForgotPassword() {
             keyboardType="email-address"
             className="border border-slate-300 rounded-lg p-4 mb-4 bg-white"
           />
-
           <TouchableOpacity
             onPress={handleSendOtp}
             disabled={loading}
@@ -176,10 +213,14 @@ export default function ForgotPassword() {
 
       {step === 'otp' && (
         <>
-          <Text className="text-slate-600 mb-3">
-            OTP sent to {email}
+          <Text className="text-slate-600 mb-3">OTP sent to {email}</Text>
+          <Text className="mb-2 text-center text-red-600">
+            {otpExpired
+              ? 'OTP expired. Please resend OTP.'
+              : canResend
+                ? 'You can resend OTP now.'
+                : `Resend available in ${formatTimer(timer)}`}
           </Text>
-
           <TextInput
             placeholder="Enter 6-digit OTP"
             value={otp}
@@ -187,18 +228,52 @@ export default function ForgotPassword() {
             keyboardType="number-pad"
             maxLength={6}
             className="border border-slate-300 rounded-lg p-4 mb-4 bg-white"
+            editable={!otpExpired}
           />
-
           <TouchableOpacity
             onPress={handleVerifyOtp}
-            disabled={loading}
-            className="bg-blue-600 py-4 rounded-lg items-center"
+            disabled={loading || otpExpired}
+            className={`bg-blue-600 py-4 rounded-lg items-center mb-3 ${otpExpired ? 'opacity-50' : ''}`}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <Text className="text-white font-bold">Verify OTP</Text>
             )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={async () => {
+              if (!userId) return;
+              setLoading(true);
+              try {
+                await resendOtpApi({ user_id: userId, otp_type: 'PASSWORD_RESET' });
+                Alert.alert('Success', 'OTP resent to your email');
+                setOtp('');
+                setTimer(300);
+                setCanResend(false);
+                setOtpExpired(false);
+                if (timerRef.current) clearInterval(timerRef.current);
+                timerRef.current = setInterval(() => {
+                  setTimer((prev) => {
+                    if (prev <= 1) {
+                      clearInterval(timerRef.current!);
+                      setCanResend(true);
+                      setOtpExpired(true);
+                      return 0;
+                    }
+                    return prev - 1;
+                  });
+                }, 1000);
+              } catch (err: any) {
+                Alert.alert('Error', err?.response?.data?.message || 'Failed to resend OTP');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={!canResend || loading}
+            className={`py-3 rounded-lg items-center ${canResend ? 'bg-green-600' : 'bg-gray-400'}`}
+          >
+            <Text className="text-white font-bold">Resend OTP</Text>
           </TouchableOpacity>
         </>
       )}
@@ -212,7 +287,6 @@ export default function ForgotPassword() {
             onChangeText={setNewPassword}
             className="border border-slate-300 rounded-lg p-4 mb-4 bg-white"
           />
-
           <TextInput
             placeholder="Confirm Password"
             secureTextEntry
@@ -220,7 +294,6 @@ export default function ForgotPassword() {
             onChangeText={setConfirmPassword}
             className="border border-slate-300 rounded-lg p-4 mb-4 bg-white"
           />
-
           <TouchableOpacity
             onPress={handleResetPassword}
             disabled={loading}
@@ -229,9 +302,7 @@ export default function ForgotPassword() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white font-bold">
-                Reset Password
-              </Text>
+              <Text className="text-white font-bold">Reset Password</Text>
             )}
           </TouchableOpacity>
         </>
