@@ -3,6 +3,7 @@ import * as controller from "./complaint.controller.js";
 import { protect } from "../../middleware/auth.middleware.js";
 import { upload } from "../../middleware/upload.middleware.js";
 import * as mediaController from "./media.controller.js";
+import { authorize } from "../../middleware/role.middleware.js";
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ const router = express.Router();
 router.post(
     "/",
     protect,
+    authorize("USER"),
     controller.submitComplaint
 );
 
@@ -20,11 +22,27 @@ router.get(
     controller.getComplaints
 );
 
+// Get assigned complaints for DEPT_ADMIN
+router.get(
+    "/assigned",
+    protect,
+    authorize("DEPT_ADMIN"),
+    controller.getAssignedComplaints
+);
+
 // Get complaint details
 router.get(
     "/:id",
     protect,
     controller.getComplaintById
+);
+
+// Update complaint status (Only DEPT_ADMIN)
+router.patch(
+    "/:id/status",
+    protect,
+    authorize("DEPT_ADMIN"),
+    controller.updateComplaintStatus
 );
 
 // Upload media
@@ -42,4 +60,5 @@ router.get(
     mediaController.getMedia
 );
 
-export default router;
+
+export default router;  

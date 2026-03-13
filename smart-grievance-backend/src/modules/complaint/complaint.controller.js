@@ -54,3 +54,39 @@ export const getComplaintById = async (req, res, next) => {
         next(error);
     }
 };
+
+// ======================================================
+// 4️⃣ GET ASSIGNED COMPLAINTS (FOR DEPT ADMINS)
+// ======================================================   
+export const getAssignedComplaints = async (req, res, next) => {
+    try {
+
+        const result = await service.getAssignedComplaints(req.user);
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ======================================================
+// 5️⃣ UPDATE COMPLAINT STATUS (BY DEPT_ADMIN)
+// ======================================================
+export const updateComplaintStatus = async (req, res, next) => {
+    try {
+
+        const { status } = req.body;
+
+        const result = await service.updateComplaintStatus(
+            req.params.id,
+            status,
+            req.user
+        );
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        next(error);
+    }
+};

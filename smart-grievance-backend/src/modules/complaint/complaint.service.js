@@ -4,6 +4,7 @@ import Department from "../../models/department.model.js";
 import Area from "../../models/area.model.js";
 import Category from "../../models/category.model.js";
 import User from "../../models/user.model.js";
+import { assignComplaint } from "../../services/assignment.service.js";
 
 import { generateComplaintNumber } from "../../services/complaintNumber.service.js";
 import { calculateSLA } from "../../services/sla.service.js";
@@ -47,7 +48,7 @@ export const submitComplaint = async (data, currentUser) => {
         calculateSLA(category);
 
     // Create Complaint
-    const complaint = await Complaint.create({
+    let complaint = await Complaint.create({
         complaint_number: complaintNumber,
         user_id: currentUser._id,
         department_id,
@@ -71,6 +72,9 @@ export const submitComplaint = async (data, currentUser) => {
         performed_by: currentUser._id,
         role: currentUser.role,
     });
+
+    // Auto assignment engine
+    complaint = await assignComplaint(complaint);
 
     return complaint;
 };
@@ -156,4 +160,78 @@ export const getComplaintById = async (id, currentUser) => {
         complaint,
         timeline,
     };
+};
+
+// ======================================================
+// 4️⃣ GET COMPLAINTS ASSIGNED TO CURRENT DEPT_ADMIN
+// ======================================================
+export const getAssignedComplaints = async (currentUser) => {
+
+    if (currentUser.role !== "DEPT_ADMIN") {
+        throw new Error("Only department admins can access assigned complaints");
+    }
+
+    const complaints = await Complaint.find({
+        assigned_admin_id: currentUser._id
+    })
+        .populate("user_id", "full_name email phone")
+        .populate("department_id", "name")
+        .populate("area_id", "name")
+        .populate("category_id", "name priority")
+        .sort({ createdAt: -1 });
+
+    return complaints;
+};
+
+// ======================================================
+// 5️⃣ UPDATE COMPLAINT STATUS (BY DEPT_ADMIN)
+// ======================================================
+export const updateComplaintStatus = async (
+    complaintId,
+    status,
+    currentUser
+) => {
+
+    if (currentUser.role !== "DEPT_ADMIN") {
+        throw new Error("Only department admins can update status");
+    }
+
+    const complaint = await Complaint.findById(complaintId);
+
+    if (!complaint) {
+        throw new Error("Complaint not found");
+    }
+
+    if (
+        complaint.assigned_admin_id?.toString() !==
+        currentUser._id.toString()
+    ) {
+        throw new Error("Unauthorized to update this complaint");
+    }
+
+    const allowedStatus = [
+        "UNDER_REVIEW",
+        "IN_PROGRESS",
+        "RESOLVED",
+        "REJECTED"
+    ];
+
+    if (!allowedStatus.includes(status)) {
+        throw new Error("Invalid status update");
+    }
+
+    complaint.status = status;
+
+    await complaint.save();
+
+    // Create timeline event
+    await ComplaintTimeline.create({
+        complaint_id: complaint._id,
+        action: "STATUS_UPDATED",
+        description: `Status updated to ${status}`,
+        performed_by: currentUser._id,
+        role: currentUser.role
+    });
+
+    return complaint;
 };
