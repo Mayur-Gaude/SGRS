@@ -1,7 +1,7 @@
 import * as service from "./complaint.service.js";
 import { successResponse } from "../../utils/response.js";
-
-
+import * as remarkService from "./complaintRemark.service.js";
+import * as resolutionService from "./complaintResolution.service.js";
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
 // ======================================================
@@ -81,6 +81,54 @@ export const updateComplaintStatus = async (req, res, next) => {
         const result = await service.updateComplaintStatus(
             req.params.id,
             status,
+            req.user
+        );
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+
+export const addRemark = async (req, res, next) => {
+    try {
+
+        const { remark } = req.body;
+
+        if (!remark) {
+            throw new Error("Remark is required");
+        }
+
+        const result = await remarkService.addAdminRemark(
+            req.params.id,
+            remark,
+            req.user
+        );
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+
+export const resolveComplaint = async (req, res, next) => {
+    try {
+
+        const { resolutionRemark } = req.body;
+
+        if (!resolutionRemark) {
+            throw new Error("Resolution remark is required");
+        }
+
+        const result = await resolutionService.resolveComplaint(
+            req.params.id,
+            resolutionRemark,
             req.user
         );
 

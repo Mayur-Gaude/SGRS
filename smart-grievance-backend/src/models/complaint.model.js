@@ -53,7 +53,8 @@ const complaintSchema = new mongoose.Schema(
                 "IN_PROGRESS",
                 "RESOLVED",
                 "REJECTED",
-                "CLOSED"
+                "CLOSED",
+                "REOPENED",
             ],
             default: "SUBMITTED",
         },

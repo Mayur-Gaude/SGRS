@@ -8,7 +8,7 @@ import { assignComplaint } from "../../services/assignment.service.js";
 
 import { generateComplaintNumber } from "../../services/complaintNumber.service.js";
 import { calculateSLA } from "../../services/sla.service.js";
-
+import { evaluateSLA } from "../../services/sla.service.js";
 
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
@@ -196,7 +196,7 @@ export const updateComplaintStatus = async (
         throw new Error("Only department admins can update status");
     }
 
-    const complaint = await Complaint.findById(complaintId);
+    let complaint = await Complaint.findById(complaintId);
 
     if (!complaint) {
         throw new Error("Complaint not found");
@@ -220,6 +220,7 @@ export const updateComplaintStatus = async (
         throw new Error("Invalid status update");
     }
 
+    complaint = await evaluateSLA(complaint); // Initial SLA evaluation
     complaint.status = status;
 
     await complaint.save();

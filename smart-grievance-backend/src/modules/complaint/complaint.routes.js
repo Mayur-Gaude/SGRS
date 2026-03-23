@@ -60,5 +60,19 @@ router.get(
     mediaController.getMedia
 );
 
+router.post(
+    "/:id/remarks",
+    protect,
+    authorize("DEPT_ADMIN"),
+    controller.addRemark
+);
+
+
+router.patch(
+    "/:id/resolve",
+    protect,
+    authorize("DEPT_ADMIN"),
+    controller.resolveComplaint
+);
 
 export default router;  
