@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { login as loginApi } from "../../lib/auth";
 import { isValidEmail } from "../../lib/validation";
+import { useAuthStore } from "../../store/authStore";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const setToken = useAuthStore((state) => state.setToken);
 
   const onLogin = async () => {
     if (!email || !password) {
@@ -43,11 +45,11 @@ export default function AdminLogin() {
       console.log("ADMIN LOGIN PAYLOAD:", payload);
 
       const res = await loginApi(payload);
-
+      // Save token to Zustand
+      const token = res.data?.token || res.data?.accessToken || res.token || res.accessToken;
+      if (token) setToken(token);
       console.log("ADMIN LOGIN RESPONSE:", res.data);
-
       Alert.alert("Success", "Admin login successful!");
-
       router.replace("/admin/dashboard");
     } catch (e: any) {
       console.log("ADMIN LOGIN ERROR:", e?.response?.data || e.message);

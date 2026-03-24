@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { login as loginApi } from '../../lib/auth';
 import { isValidEmail, isValidIndianMobile, normalizeIndianPhone } from '../../lib/validation';
+import { useAuthStore } from '../../store/authStore';
 
 export default function CitizenPortal() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function CitizenPortal() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const setToken = useAuthStore((state) => state.setToken);
 
   // const onLogin = async () => {
   //   // Validation
@@ -95,8 +97,10 @@ export default function CitizenPortal() {
     console.log("LOGIN PAYLOAD:", payload);
 
     const res = await loginApi(payload);
+    // Save token to Zustand
+    const token = res.data?.token || res.data?.accessToken || res.token || res.accessToken;
+    if (token) setToken(token);
     console.log("LOGIN SUCCESS:", res);
-
     Alert.alert("Success", "Login successful!");
     router.replace('/citizen/dashboard');
 

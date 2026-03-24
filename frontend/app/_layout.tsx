@@ -69,6 +69,14 @@ export default function RootLayout() {
           name="super-admin/dashboard" 
           options={{ headerShown: false }} 
         />
+        <Stack.Screen 
+          name="super-admin/departments" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="super-admin/admins" 
+          options={{ headerShown: false }} 
+        />
       </Stack>
     </DrawerProvider>
     </>

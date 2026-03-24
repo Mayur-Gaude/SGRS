@@ -13,7 +13,6 @@ const CitizenDashboard: React.FC = () => {
 
   const verifyLocation = () => {
     setShowModal(false);
-    alert("Location verification coming soon 🚀");
   };
 
   return (

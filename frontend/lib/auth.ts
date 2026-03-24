@@ -1,8 +1,4 @@
-// Resend OTP for forgot password
-export async function resendOtpApi(payload: { user_id: string; otp_type: string }) {
-  return api.post('/api/auth/resend-otp', payload);
-}
-import api from './api';
+import api from '@/lib/api';
 
 export interface RegisterPayload {
   full_name: string;
@@ -27,6 +23,11 @@ export async function verifyOtp(payload: {
   return api.post('/api/auth/verify-otp', payload);
 }
 
+// 2FA verification for admin/super-admin login
+export async function verify2FA(payload: { user_id: string; otp_code: string }) {
+  return api.post('/api/auth/verify-2fa', payload);
+}
+
 /* 🔥 FORGOT PASSWORD FLOW */
 
 export async function requestPasswordReset(email: string) {
@@ -45,4 +46,9 @@ export async function setNewPasswordApi(payload: {
   new_password: string;
 }) {
   return api.post('/api/auth/set-new-password', payload);
+}
+
+// Resend OTP for forgot password
+export async function resendOtpApi(payload: { user_id: string; otp_type: string }) {
+  return api.post('/api/auth/resend-otp', payload);
 }

@@ -109,7 +109,7 @@ export default function SuperAdminDashboard() {
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 6 }}>
-            User Management
+            Admin Management
           </Text>
 
           <Text style={{ color: "#64748b", marginBottom: 10 }}>
@@ -120,10 +120,10 @@ export default function SuperAdminDashboard() {
 
           <TouchableOpacity
             style={{ flexDirection: "row", alignItems: "center" }}
-            onPress={() => router.push("/super-admin/users")}
+            onPress={() => router.push("/super-admin/admins")}
           >
             <Text style={{ color: "#2563eb", fontWeight: "600", marginRight: 6 }}>
-              User Management
+              Admin Management
             </Text>
             <Feather name="arrow-right" size={16} color="#2563eb" />
           </TouchableOpacity>
