@@ -15,14 +15,12 @@ router.post(
 router.get(
     "/",
     protect,
-    authorize("SUPER_ADMIN"),
     controller.getAllCategories
 );
 
 router.get(
     "/department/:department_id",
     protect,
-    authorize("SUPER_ADMIN"),
     controller.getCategoriesByDepartment
 );
 

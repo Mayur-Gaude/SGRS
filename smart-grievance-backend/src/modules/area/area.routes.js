@@ -15,7 +15,6 @@ router.post(
 router.get(
     "/",
     protect,
-    authorize("SUPER_ADMIN"),
     controller.getAllAreas
 );
 

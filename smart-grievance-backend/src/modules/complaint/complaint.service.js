@@ -117,9 +117,34 @@ export const getComplaints = async (currentUser) => {
 };
 
 
+// ======================================================
+// 3️⃣ GET COMPLAINT FORM METADATA
+// ======================================================
+
+export const getComplaintMeta = async () => {
+    const [departments, areas, categories] = await Promise.all([
+        Department.find({ is_active: true })
+            .select("_id name code")
+            .sort({ name: 1 }),
+        Area.find({ is_active: true })
+            .select("_id name department_id pincode ward")
+            .sort({ name: 1 }),
+        Category.find({ is_active: true })
+            .select("_id name department_id priority")
+            .sort({ name: 1 }),
+    ]);
+
+    return {
+        departments,
+        areas,
+        categories,
+    };
+};
+
+
 
 // ======================================================
-// 3️⃣ GET SINGLE COMPLAINT DETAILS
+// 4️⃣ GET SINGLE COMPLAINT DETAILS
 // ======================================================
 
 export const getComplaintById = async (id, currentUser) => {
