@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import User from "../../models/user.model.js";
 import Department from "../../models/department.model.js";
 import Area from "../../models/area.model.js";
+import { sendDepartmentAdminCredentialsEmail } from "../../services/email.service.js";
 
 export const createDepartmentAdmin = async (data) => {
     const {
@@ -46,6 +47,18 @@ export const createDepartmentAdmin = async (data) => {
         email_verified: true,
         phone_verified: true,
     });
+
+    // Do not fail admin creation if email sending fails.
+    try {
+        await sendDepartmentAdminCredentialsEmail({
+            email,
+            full_name,
+            password,
+            department_name: department.name,
+        });
+    } catch (e) {
+        console.error("Failed to send admin credentials email", e?.message || e);
+    }
 
     return admin;
 };
