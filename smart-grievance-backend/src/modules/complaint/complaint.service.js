@@ -4,6 +4,7 @@ import Department from "../../models/department.model.js";
 import Area from "../../models/area.model.js";
 import Category from "../../models/category.model.js";
 import User from "../../models/user.model.js";
+import { isPointInsidePolygon } from "../../utils/geofence.js";
 
 import { generateComplaintNumber } from "../../services/complaintNumber.service.js";
 import { calculateSLA } from "../../services/sla.service.js";
@@ -33,6 +34,27 @@ export const submitComplaint = async (data, currentUser) => {
     const area = await Area.findById(area_id);
     if (!area || area.department_id.toString() !== department_id)
         throw new Error("Invalid area selected");
+
+    const hasAreaPolygon =
+        area?.geo_boundary?.type === "Polygon" &&
+        Array.isArray(area?.geo_boundary?.coordinates) &&
+        area.geo_boundary.coordinates.length > 0;
+
+    if (hasAreaPolygon) {
+        if (latitude === undefined || longitude === undefined) {
+            throw new Error("Location is required for this service area");
+        }
+
+        const isInside = isPointInsidePolygon(
+            Number(latitude),
+            Number(longitude),
+            area.geo_boundary.coordinates[0]
+        );
+
+        if (!isInside) {
+            throw new Error("Selected location is outside this service area boundary");
+        }
+    }
 
     // Validate Category
     const category = await Category.findById(category_id);
@@ -127,7 +149,7 @@ export const getComplaintMeta = async () => {
             .select("_id name code")
             .sort({ name: 1 }),
         Area.find({ is_active: true })
-            .select("_id name department_id pincode ward")
+            .select("_id name department_id pincode ward geo_boundary")
             .sort({ name: 1 }),
         Category.find({ is_active: true })
             .select("_id name department_id priority")
