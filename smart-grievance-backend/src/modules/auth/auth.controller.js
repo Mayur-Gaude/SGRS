@@ -28,6 +28,24 @@ export const login = async (req, res, next) => {
     }
 };
 
+export const getMyProfile = async (req, res, next) => {
+    try {
+        const result = await authService.getMyProfile(req.user);
+        return successResponse(res, result, "Profile fetched successfully.");
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateMyProfile = async (req, res, next) => {
+    try {
+        const result = await authService.updateMyProfile(req.user, req.body);
+        return successResponse(res, result, "Profile updated successfully.");
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const requestPasswordReset = async (req, res, next) => {
     try {
         const result = await authService.requestPasswordReset(req.body);
