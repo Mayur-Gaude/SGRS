@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   SafeAreaView,
   ScrollView,
   Text,
@@ -12,8 +13,10 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import AppBar from '../../components/AppBar';
-import { getComplaints } from '../../lib/api';
+import ComplaintDetailsModal from '../../components/ComplaintDetailsModal';
+import { getComplaintMedia, getComplaints } from '../../lib/api';
 import { useAuthStore } from '../../store/authStore';
+import Constants from 'expo-constants';
 
 type IdRef = string | { _id?: string; id?: string; name?: string };
 
@@ -30,10 +33,12 @@ type Complaint = {
   category_id?: IdRef;
 };
 
-const getName = (value: any): string => {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  return value.name || '';
+type ComplaintMedia = {
+  _id?: string;
+  id?: string;
+  media_url?: string;
+  media_type?: string;
+  createdAt?: string;
 };
 
 const normalizeList = <T,>(res: any): T[] => {
@@ -50,6 +55,9 @@ export default function MyGrievances() {
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('All');
   const [loadingComplaints, setLoadingComplaints] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [complaintMedia, setComplaintMedia] = useState<ComplaintMedia[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
 
   const tags = ['All', 'SUBMITTED', 'UNDER_REVIEW', 'RESOLVED', 'REJECTED', 'CLOSED'];
 
@@ -67,6 +75,42 @@ export default function MyGrievances() {
       setLoadingComplaints(false);
     }
   }, [authToken]);
+
+  const getComplaintId = (c: Complaint): string => {
+    const value: any = c._id || c.id;
+    return typeof value === 'string' ? value : '';
+  };
+
+  const getApiBaseUrl = () => {
+    const url = (Constants.expoConfig as any)?.extra?.apiUrl || (Constants.manifest as any)?.extra?.apiUrl;
+    return (url || '').replace(/\/$/, '');
+  };
+
+  const getMediaUrl = (rawUrl?: string) => {
+    if (!rawUrl) return '';
+    if (rawUrl.startsWith('http')) return rawUrl;
+    const normalized = rawUrl.replace(/\\/g, '/').replace(/^\/+/, '');
+    const base = getApiBaseUrl();
+    return base ? `${base}/${normalized}` : normalized;
+  };
+
+  const openComplaintDetails = async (complaint: Complaint) => {
+    const complaintId = getComplaintId(complaint);
+    setSelectedComplaint(complaint);
+    setComplaintMedia([]);
+
+    if (!complaintId || !authToken) return;
+
+    setLoadingMedia(true);
+    try {
+      const mediaRes = await getComplaintMedia(complaintId, authToken);
+      setComplaintMedia(normalizeList<ComplaintMedia>(mediaRes));
+    } catch {
+      setComplaintMedia([]);
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -90,7 +134,11 @@ export default function MyGrievances() {
       status === 'RESOLVED' ? 'text-emerald-600' : status === 'REJECTED' ? 'text-red-600' : 'text-amber-600';
 
     return (
-      <View key={item._id || item.id || item.complaint_number} className="bg-white border border-slate-200 rounded-xl p-4 mb-3">
+      <TouchableOpacity
+        onPress={() => openComplaintDetails(item)}
+        activeOpacity={0.9}
+        className="bg-white border border-slate-200 rounded-xl p-4 mb-3"
+      >
         <View className="flex-row justify-between items-start">
           <Text className="font-semibold text-slate-900 flex-1 mr-2">{item.title || 'Untitled Complaint'}</Text>
           <Text className={`text-xs font-semibold ${statusColor}`}>{status}</Text>
@@ -98,17 +146,8 @@ export default function MyGrievances() {
 
         {!!item.complaint_number && <Text className="text-slate-500 text-xs mt-1">#{item.complaint_number}</Text>}
 
-        {!!item.description && <Text className="text-slate-700 mt-2">{item.description}</Text>}
-
-        <View className="mt-3">
-          {!!getName(item.department_id) && <Text className="text-slate-500 text-xs">Department: {getName(item.department_id)}</Text>}
-          {!!getName(item.area_id) && <Text className="text-slate-500 text-xs">Area: {getName(item.area_id)}</Text>}
-          {!!getName(item.category_id) && <Text className="text-slate-500 text-xs">Category: {getName(item.category_id)}</Text>}
-          {!!item.createdAt && (
-            <Text className="text-slate-400 text-xs mt-1">{new Date(item.createdAt).toLocaleString()}</Text>
-          )}
-        </View>
-      </View>
+        <Text className="text-slate-400 text-xs mt-2">Tap to view full details</Text>
+      </TouchableOpacity>
     );
   };
 
@@ -155,9 +194,29 @@ export default function MyGrievances() {
             <Text className="text-slate-500 text-center mt-10">No grievances found</Text>
           </View>
         ) : (
-          <View className="mb-2">{filteredComplaints.map(renderComplaintCard)}</View>
+          <FlatList
+            data={filteredComplaints}
+            keyExtractor={(item, index) => String(item._id || item.id || item.complaint_number || index)}
+            renderItem={({ item }) => renderComplaintCard(item)}
+            scrollEnabled={false}
+            removeClippedSubviews
+            initialNumToRender={6}
+            windowSize={5}
+            maxToRenderPerBatch={8}
+            updateCellsBatchingPeriod={50}
+            contentContainerStyle={{ paddingBottom: 8 }}
+          />
         )}
       </ScrollView>
+
+      <ComplaintDetailsModal
+        visible={!!selectedComplaint}
+        complaint={selectedComplaint}
+        media={complaintMedia}
+        loadingMedia={loadingMedia}
+        onClose={() => setSelectedComplaint(null)}
+        resolveMediaUrl={getMediaUrl}
+      />
     </SafeAreaView>
   );
 }

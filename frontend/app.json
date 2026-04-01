@@ -3,11 +3,11 @@
     "name": "Sgrss",
     "slug": "Sgrss",
     "version": "1.0.0",
+    "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sgrss",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -22,7 +22,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.mayank1007gshshs.sgrss"
     },
     "web": {
       "output": "static",
@@ -34,6 +40,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow SGRSS to use your location to auto-fill complaint location and route your grievance."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow SGRSS to access your photos for complaint evidence.",
+          "cameraPermission": "Allow SGRSS to use your camera to capture complaint evidence."
         }
       ],
       [
@@ -50,11 +63,15 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://192.168.0.157:5000"
+      "apiUrl": "https://sgrs-w6tg.onrender.com",
+      "router": {},
+      "eas": {
+        "projectId": "5dd07146-f794-4782-aea7-9604b9d6b3a4"
+      }
     },
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": false
     }
   }
 }

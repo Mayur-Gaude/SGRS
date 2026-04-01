@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { getComplaintMeta, submitComplaint } from '../lib/api';
+import * as ImagePicker from 'expo-image-picker';
+import { getComplaintMeta, submitComplaint, uploadComplaintMedia } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
+import { isPointInPolygon, normalizePolygonFromGeoBoundary } from '../lib/geofence';
+import OsmInteractiveMap from './OsmInteractiveMap';
 
 interface Props {
   visible: boolean;
@@ -29,6 +32,10 @@ type Area = {
   department_id?: IdRef;
   pincode?: string;
   ward?: string;
+  geo_boundary?: {
+    type?: 'Polygon';
+    coordinates?: number[][][];
+  };
 };
 
 type Category = {
@@ -74,10 +81,12 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
   const [pincode, setPincode] = useState<string>('');
   const [latitude, setLatitude] = useState<number | undefined>(undefined);
   const [longitude, setLongitude] = useState<number | undefined>(undefined);
+  const [selectedMediaUri, setSelectedMediaUri] = useState<string>('');
 
   const [loadingDepartments, setLoadingDepartments] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [verifyingLocation, setVerifyingLocation] = useState<boolean>(false);
+  const [pickingMedia, setPickingMedia] = useState<boolean>(false);
 
   const activeDepartments = useMemo(() => departments, [departments]);
   const filteredAreas = useMemo(
@@ -89,6 +98,20 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
     [categories, departmentId]
   );
   const selectedArea = useMemo(() => filteredAreas.find((a) => getId(a) === areaId), [filteredAreas, areaId]);
+  const selectedAreaPolygon = useMemo(
+    () => normalizePolygonFromGeoBoundary(selectedArea?.geo_boundary as any),
+    [selectedArea?.geo_boundary]
+  );
+
+  const isLocationInsideSelectedArea = useMemo(() => {
+    if (latitude == null || longitude == null) return true;
+    if (!selectedAreaPolygon.length) return true;
+
+    return isPointInPolygon(
+      { latitude, longitude },
+      selectedAreaPolygon
+    );
+  }, [latitude, longitude, selectedAreaPolygon]);
 
   const resetState = () => {
     setStep(0);
@@ -103,6 +126,7 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
     setPincode('');
     setLatitude(undefined);
     setLongitude(undefined);
+    setSelectedMediaUri('');
   };
 
   useEffect(() => {
@@ -147,7 +171,10 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
 
   const goToMyGrievances = () => {
     onClose();
-    router.push('/citizen/create-grievance');
+    // Let native modal close animation finish before navigating.
+    setTimeout(() => {
+      router.push('/citizen/create-grievance');
+    }, 300);
   };
 
   const handleVerifyLocation = async () => {
@@ -213,6 +240,11 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
       return;
     }
 
+    if (selectedAreaPolygon.length && !isLocationInsideSelectedArea) {
+      Alert.alert('Outside service area', 'Selected location is outside this area boundary. Move the marker inside the boundary to continue.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const mergedDescription = [
@@ -223,7 +255,7 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
         .filter(Boolean)
         .join('\n');
 
-      await submitComplaint(
+      const complaintRes = await submitComplaint(
         {
           department_id: departmentId,
           area_id: areaId,
@@ -237,13 +269,97 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
         authToken
       );
 
-      onVerify();
+      const complaint = complaintRes?.data?.data || complaintRes?.data || complaintRes;
+      const complaintId = complaint?._id || complaint?.id;
+
+      if (selectedMediaUri && complaintId) {
+        try {
+          await uploadComplaintMedia(complaintId, selectedMediaUri, authToken);
+        } catch {
+          Alert.alert('Uploaded complaint', 'Complaint was submitted, but image upload failed. You can upload it later.');
+        }
+      }
+
       setShowSuccess(true);
     } catch (e: any) {
       Alert.alert('Submit failed', e?.message || 'Unable to submit complaint.');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const pickImageFrom = async (source: 'camera' | 'library') => {
+    setPickingMedia(true);
+    try {
+      if (source === 'camera') {
+        const camPermission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!camPermission.granted) {
+          Alert.alert('Permission required', 'Please allow camera permission to capture photo evidence.');
+          return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+        });
+
+        if (!result.canceled && result.assets?.length) {
+          setSelectedMediaUri(result.assets[0].uri);
+        }
+        return;
+      }
+
+      const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!libraryPermission.granted) {
+        Alert.alert('Permission required', 'Please allow media library permission to pick photo evidence.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        setSelectedMediaUri(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert('Image error', 'Unable to select image. Please try again.');
+    } finally {
+      setPickingMedia(false);
+    }
+  };
+
+  const handleMarkerDragEnd = async (coords: { latitude: number; longitude: number }) => {
+    const lat = coords.latitude;
+    const lng = coords.longitude;
+
+    setLatitude(lat);
+    setLongitude(lng);
+
+    try {
+      const geocoded = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      const first = geocoded?.[0];
+      if (first) {
+        const detectedAddress = [
+          first.name,
+          first.street,
+          first.city || first.subregion,
+          first.region,
+          first.postalCode,
+        ]
+          .filter(Boolean)
+          .join(', ');
+
+        setLocation(detectedAddress || `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        if (first.postalCode) setPincode(first.postalCode);
+        return;
+      }
+    } catch {
+      // Ignore reverse geocoding failure and keep coordinates.
+    }
+
+    setLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
   };
 
   return (
@@ -366,15 +482,36 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
                 <Text className="text-lg font-bold">Upload Photo</Text>
                 <Text className="text-xs text-slate-500 mb-4">Step 2 of 3</Text>
 
-                <TouchableOpacity className="border border-slate-300 py-3 rounded-xl flex-row items-center justify-center mb-3">
+                <TouchableOpacity
+                  onPress={() => pickImageFrom('camera')}
+                  disabled={pickingMedia}
+                  className="border border-slate-300 py-3 rounded-xl flex-row items-center justify-center mb-3"
+                >
                   <Feather name="camera" size={20} color="#2563eb" />
                   <Text className="ml-2 text-blue-600 font-medium">Open Camera</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity className="border border-slate-300 py-3 rounded-xl flex-row items-center justify-center mb-4">
+                <TouchableOpacity
+                  onPress={() => pickImageFrom('library')}
+                  disabled={pickingMedia}
+                  className="border border-slate-300 py-3 rounded-xl flex-row items-center justify-center mb-4"
+                >
                   <Feather name="image" size={20} color="#2563eb" />
                   <Text className="ml-2 text-blue-600 font-medium">Choose from Gallery</Text>
                 </TouchableOpacity>
+
+                {pickingMedia ? (
+                  <View className="py-2 items-center">
+                    <ActivityIndicator color="#2563eb" />
+                  </View>
+                ) : null}
+
+                {selectedMediaUri ? (
+                  <View className="mb-4">
+                    <Image source={{ uri: selectedMediaUri }} style={{ width: '100%', height: 140, borderRadius: 12 }} />
+                    <Text className="text-xs text-green-700 mt-2">Photo attached and will upload on submit.</Text>
+                  </View>
+                ) : null}
 
                 <View className="flex-row justify-between">
                   <TouchableOpacity onPress={() => setStep(1)} className="border border-slate-300 px-4 py-2 rounded-lg">
@@ -393,10 +530,31 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
                 <Text className="text-lg font-bold">Location Details</Text>
                 <Text className="text-xs text-slate-500 mb-3">Step 3 of 3</Text>
 
-                <View className="bg-slate-200 h-32 rounded-xl mb-3 flex items-center justify-center">
-                  <Feather name="map-pin" size={30} color="#2563eb" />
-                  <Text className="text-xs text-slate-600 mt-1">Adjust Pin</Text>
-                </View>
+                {latitude && longitude ? (
+                  <View className="mb-3">
+                    <OsmInteractiveMap
+                      mode="marker"
+                      center={{ latitude, longitude }}
+                      marker={{ latitude, longitude }}
+                      polygon={selectedAreaPolygon}
+                      height={220}
+                      onMarkerChange={handleMarkerDragEnd}
+                    />
+                  </View>
+                ) : (
+                  <View className="bg-slate-200 h-32 rounded-xl mb-3 flex items-center justify-center">
+                    <Feather name="map-pin" size={30} color="#2563eb" />
+                    <Text className="text-xs text-slate-600 mt-1">Location not available</Text>
+                  </View>
+                )}
+
+                {selectedAreaPolygon.length > 0 && !isLocationInsideSelectedArea ? (
+                  <View className="bg-amber-100 border border-amber-300 rounded-xl p-3 mb-3">
+                    <Text className="text-amber-900 text-xs">
+                      Warning: your selected point is outside this service area boundary. Move the marker inside the highlighted zone.
+                    </Text>
+                  </View>
+                ) : null}
 
                 <TextInput
                   placeholder="Detected Location"

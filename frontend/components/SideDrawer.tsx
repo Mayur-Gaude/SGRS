@@ -1,7 +1,9 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, Pressable, Text, View } from 'react-native';
+import { Animated, Dimensions, Easing, Pressable, Text, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { useAuthStore } from '../store/authStore';
+import { getMyProfile } from '../lib/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = Math.min(300, Math.round(SCREEN_WIDTH * 0.8));
@@ -25,11 +27,38 @@ export const useDrawer = () => {
 // Provider that renders the drawer UI and exposes controls via context
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [drawerName, setDrawerName] = useState('Citizen');
+  const [drawerEmail, setDrawerEmail] = useState('');
+  const [drawerAvatar, setDrawerAvatar] = useState('');
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const router = useRouter();
+  const token = useAuthStore((state) => state.token) || undefined;
+  const clearToken = useAuthStore((state) => state.clearToken);
+
+  const hydrateDrawerProfile = useCallback(async () => {
+    if (!token) {
+      setDrawerName('Citizen');
+      setDrawerEmail('');
+      setDrawerAvatar('');
+      return;
+    }
+
+    try {
+      const res = await getMyProfile(token);
+      const profile = res?.data || res;
+      setDrawerName(profile?.full_name || 'Citizen');
+      setDrawerEmail(profile?.email || '');
+      setDrawerAvatar(profile?.avatar_url || '');
+    } catch {
+      setDrawerName('Citizen');
+      setDrawerEmail('');
+      setDrawerAvatar('');
+    }
+  }, [token]);
 
   const open = useCallback(() => {
+    hydrateDrawerProfile();
     setIsOpen(true);
     Animated.parallel([
       Animated.timing(translateX, {
@@ -45,7 +74,7 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [translateX, backdropOpacity]);
+  }, [translateX, backdropOpacity, hydrateDrawerProfile]);
 
   const close = useCallback(() => {
     Animated.parallel([
@@ -89,10 +118,13 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
         <Animated.View className="absolute top-0 bottom-0 left-0 bg-white" style={{ width: DRAWER_WIDTH, transform: [{ translateX }] }}> 
           {/* Blue header area up to AppBar height */}
           <View className="h-[100px] bg-blue-700 flex-row items-center px-4">
-            <View className="w-12 h-12 rounded-full bg-blue-300" />
+            <Image
+              source={{ uri: drawerAvatar || 'https://i.pravatar.cc/120' }}
+              className="w-12 h-12 rounded-full bg-blue-300"
+            />
             <View className="ml-3">
-              <Text className="text-white text-base font-bold">John Doe</Text>
-              <Text className="text-white/90 text-xs mt-0.5">john.doe@example.com</Text>
+              <Text className="text-white text-base font-bold">{drawerName}</Text>
+              <Text className="text-white/90 text-xs mt-0.5">{drawerEmail || 'No email'}</Text>
             </View>
           </View>
           {/* White content area */}
@@ -116,7 +148,13 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
           </View>
 
           {/* Bottom logout */}
-          <Pressable className="absolute bottom-3 left-0 right-0 px-4 py-3 flex-row items-center" onPress={() => go('/')}>
+          <Pressable
+            className="absolute bottom-3 left-0 right-0 px-4 py-3 flex-row items-center"
+            onPress={() => {
+              clearToken();
+              go('/');
+            }}
+          >
             <Feather name="log-out" size={18} color="#ef4444" />
             <Text className="text-red-500 text-base ml-3 font-semibold">Log out</Text>
           </Pressable>

@@ -8,9 +8,16 @@ import {
   getAreas,
   getCategories,
   getDepartments,
+  updateArea,
 } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import { Picker } from "@react-native-picker/picker";
+import {
+  normalizeGeoBoundaryFromMapPoints,
+  normalizePolygonFromGeoBoundary,
+  type LatLngPoint,
+} from "../../lib/geofence";
+import OsmInteractiveMap from "../../components/OsmInteractiveMap";
 import {
   Alert,
   SafeAreaView,
@@ -41,12 +48,15 @@ export default function DepartmentManagement() {
   const [categoryDepartmentId, setCategoryDepartmentId] = useState("");
   const [categoryName, setCategoryName] = useState("");
   const [categoryPriority, setCategoryPriority] = useState("MEDIUM");
-  const [responseHours, setResponseHours] = useState(24);
-  const [resolutionHours, setResolutionHours] = useState(72);
+  const [responseHours, setResponseHours] = useState("24");
+  const [resolutionHours, setResolutionHours] = useState("72");
 
   const [departments, setDepartments] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [boundaryAreaId, setBoundaryAreaId] = useState("");
+  const [drawingPoints, setDrawingPoints] = useState<LatLngPoint[]>([]);
+  const [savingBoundary, setSavingBoundary] = useState(false);
 
   const normalizeArray = (res: any) => {
     if (Array.isArray(res)) return res;
@@ -54,6 +64,8 @@ export default function DepartmentManagement() {
     if (Array.isArray(res?.items)) return res.items;
     return [];
   };
+
+  const getId = (obj: any) => String(obj?._id || obj?.id || "");
 
   // Fetch departments on mount
   useEffect(() => {
@@ -175,10 +187,60 @@ export default function DepartmentManagement() {
       Alert.alert("Success", "Category created");
       setCategoryName("");
       setCategoryPriority("MEDIUM");
-      setResponseHours(24);
-      setResolutionHours(72);
+      setResponseHours("24");
+      setResolutionHours("72");
     } catch (e) {
       Alert.alert("Error", "Failed to create category");
+    }
+  };
+
+  const selectedArea = areas.find((area) => getId(area) === boundaryAreaId);
+
+  useEffect(() => {
+    if (!boundaryAreaId) {
+      setDrawingPoints([]);
+      return;
+    }
+
+    const existingPoints = normalizePolygonFromGeoBoundary(selectedArea?.geo_boundary);
+    setDrawingPoints(existingPoints);
+  }, [boundaryAreaId, selectedArea?.geo_boundary]);
+
+  const handleMapPress = (point: { latitude: number; longitude: number }) => {
+    setDrawingPoints((prev) => [...prev, point]);
+  };
+
+  const clearBoundary = () => setDrawingPoints([]);
+
+  const undoPoint = () => {
+    setDrawingPoints((prev) => prev.slice(0, Math.max(prev.length - 1, 0)));
+  };
+
+  const saveBoundary = async () => {
+    if (!boundaryAreaId) {
+      Alert.alert("Missing area", "Please select an area first");
+      return;
+    }
+
+    const geoBoundary = normalizeGeoBoundaryFromMapPoints(drawingPoints);
+    if (!geoBoundary) {
+      Alert.alert("Need at least 3 points", "Tap at least three points on the map to create a polygon");
+      return;
+    }
+
+    try {
+      setSavingBoundary(true);
+      await updateArea(
+        boundaryAreaId,
+        { geo_boundary: geoBoundary },
+        token || undefined
+      );
+      await fetchAreas();
+      Alert.alert("Success", "Service area boundary saved");
+    } catch (e) {
+      Alert.alert("Error", "Failed to save boundary");
+    } finally {
+      setSavingBoundary(false);
     }
   };
 
@@ -343,11 +405,11 @@ export default function DepartmentManagement() {
               onValueChange={(v: string) => setAreaDepartmentId(v)}
             >
               <Picker.Item label="Select Department" value="" />
-              {departments.map((dept) => (
+              {departments.map((dept, index) => (
                 <Picker.Item
-                  key={dept._id || dept.id}
-                  label={dept.name}
-                  value={dept._id || dept.id}
+                  key={dept._id || dept.id || `dept-area-${index}`}
+                  label={String(dept?.name || "Unknown Department")}
+                  value={dept._id || dept.id || `invalid-${index}`}
                 />
               ))}
             </Picker>
@@ -411,9 +473,9 @@ export default function DepartmentManagement() {
         <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
           Existing Areas
         </Text>
-        {areas.map((area) => (
+        {areas.map((area, index) => (
           <View
-            key={area._id || area.id}
+            key={area._id || area.id || `area-${index}`}
             style={{
               backgroundColor: "#f1f5f9",
               padding: 14,
@@ -421,12 +483,115 @@ export default function DepartmentManagement() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontWeight: "600" }}>{area.name}</Text>
+            <Text style={{ fontWeight: "600" }}>{String(area?.name || "Unnamed Area")}</Text>
             <Text style={{ color: "#64748b", marginTop: 2 }}>
-              {area.department_id?.name || "Department"} | Pincode: {area.pincode}
+              {String(area?.department_id?.name || "Unknown Dept")} | Pincode: {String(area?.pincode || "N/A")}
             </Text>
           </View>
         ))}
+
+        <View
+          style={{
+            backgroundColor: "#f8fafc",
+            padding: 18,
+            borderRadius: 12,
+            marginBottom: 20,
+            marginTop: 16,
+          }}
+        >
+          <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+            Draw Service Area Polygon
+          </Text>
+
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#e2e8f0",
+              borderRadius: 8,
+              marginBottom: 10,
+            }}
+          >
+            <Picker
+              selectedValue={boundaryAreaId}
+              onValueChange={(v: string) => setBoundaryAreaId(v)}
+            >
+              <Picker.Item label="Select Area" value="" />
+              {areas.map((area, index) => (
+                <Picker.Item
+                  key={area._id || area.id || `boundary-area-${index}`}
+                  label={String(area?.name || "Unnamed Area")}
+                  value={String(area._id || area.id || "")}
+                />
+              ))}
+            </Picker>
+          </View>
+
+          <View style={{ marginBottom: 10 }}>
+            <OsmInteractiveMap
+              mode="polygon"
+              center={
+                drawingPoints[0] || {
+                  latitude: 23.0225,
+                  longitude: 72.5714,
+                }
+              }
+              polygon={drawingPoints}
+              height={240}
+              onAddPoint={handleMapPress}
+            />
+          </View>
+
+          <Text style={{ color: "#64748b", marginBottom: 10 }}>
+            Tap map to add polygon points. First point will be auto-closed when saving.
+          </Text>
+
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#e2e8f0",
+                paddingVertical: 10,
+                borderRadius: 8,
+                alignItems: "center",
+                flex: 1,
+                marginRight: 8,
+              }}
+              onPress={undoPoint}
+            >
+              <Text style={{ fontWeight: "600" }}>Undo Point</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#e2e8f0",
+                paddingVertical: 10,
+                borderRadius: 8,
+                alignItems: "center",
+                flex: 1,
+                marginHorizontal: 4,
+              }}
+              onPress={clearBoundary}
+            >
+              <Text style={{ fontWeight: "600" }}>Clear</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: savingBoundary ? "#60a5fa" : "#2563eb",
+                paddingVertical: 10,
+                borderRadius: 8,
+                alignItems: "center",
+                flex: 1,
+                marginLeft: 8,
+              }}
+              disabled={savingBoundary}
+              onPress={saveBoundary}
+            >
+              <Text style={{ color: "white", fontWeight: "600" }}>
+                {savingBoundary ? "Saving..." : "Save Boundary"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Create Category */}
         <View
@@ -455,11 +620,11 @@ export default function DepartmentManagement() {
               onValueChange={(v: string) => setCategoryDepartmentId(v)}
             >
               <Picker.Item label="Select Department" value="" />
-              {departments.map((dept) => (
+              {departments.map((dept, index) => (
                 <Picker.Item
-                  key={dept._id || dept.id}
-                  label={dept.name}
-                  value={dept._id || dept.id}
+                  key={dept._id || dept.id || `dept-cat-${index}`}
+                  label={String(dept?.name || "Unknown Department")}
+                  value={dept._id || dept.id || `invalid-${index}`}
                 />
               ))}
             </Picker>
@@ -499,8 +664,8 @@ export default function DepartmentManagement() {
 
           <TextInput
             placeholder="SLA Response Hours"
-            value={String(responseHours)}
-            onChangeText={(v) => setResponseHours(Number(v || 0))}
+            value={responseHours}
+            onChangeText={(v) => setResponseHours(v.replace(/[^0-9]/g, ""))}
             keyboardType="number-pad"
             style={{
               borderWidth: 1,
@@ -513,8 +678,8 @@ export default function DepartmentManagement() {
 
           <TextInput
             placeholder="SLA Resolution Hours"
-            value={String(resolutionHours)}
-            onChangeText={(v) => setResolutionHours(Number(v || 0))}
+            value={resolutionHours}
+            onChangeText={(v) => setResolutionHours(v.replace(/[^0-9]/g, ""))}
             keyboardType="number-pad"
             style={{
               borderWidth: 1,
@@ -543,9 +708,9 @@ export default function DepartmentManagement() {
         <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
           Existing Categories
         </Text>
-        {categories.map((category) => (
+        {categories.map((category, index) => (
           <View
-            key={category._id || category.id}
+            key={category._id || category.id || `cat-${index}`}
             style={{
               backgroundColor: "#f1f5f9",
               padding: 14,
@@ -553,9 +718,9 @@ export default function DepartmentManagement() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontWeight: "600" }}>{category.name}</Text>
+            <Text style={{ fontWeight: "600" }}>{String(category?.name || "Unnamed Category")}</Text>
             <Text style={{ color: "#64748b", marginTop: 2 }}>
-              {category.department_id?.name || "Department"} | Priority: {category.priority}
+              {String(category?.department_id?.name || "Unknown Dept")} | Priority: {String(category?.priority || "N/A")}
             </Text>
           </View>
         ))}

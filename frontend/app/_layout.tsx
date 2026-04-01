@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { DrawerProvider } from "../components/SideDrawer";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
 // Suppress specific deprecation warnings
@@ -17,7 +18,7 @@ console.warn = (...args) => {
 
 export default function RootLayout() {
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <StatusBar hidden/>
     <DrawerProvider>
       <Stack>
@@ -43,6 +44,10 @@ export default function RootLayout() {
         />
         <Stack.Screen 
           name="citizen/profile" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="citizen/settings" 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
@@ -77,8 +82,12 @@ export default function RootLayout() {
           name="super-admin/admins" 
           options={{ headerShown: false }} 
         />
+        <Stack.Screen 
+          name="super-admin/appeals" 
+          options={{ headerShown: false }} 
+        />
       </Stack>
     </DrawerProvider>
-    </>
+    </GestureHandlerRootView>
   );
 }

@@ -54,7 +54,7 @@ export default function SuperAdminDashboard() {
           </Text>
 
           <TouchableOpacity
-            onPress={() => router.replace("/super-admin/index")}
+            onPress={() => router.replace("/super-admin")}
             style={{ flexDirection: "row", alignItems: "center" }}
           >
             <Feather name="log-out" size={18} color="white" />

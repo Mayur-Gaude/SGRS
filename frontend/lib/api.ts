@@ -1,8 +1,14 @@
 import Constants from 'expo-constants';
 
 const getBaseUrl = () => {
-  const url = (Constants.expoConfig as any)?.extra?.apiUrl || (Constants.manifest as any)?.extra?.apiUrl;
-  if (!url) throw new Error('API base URL not configured. Add extra.apiUrl to app.json');
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  const configUrl = (Constants.expoConfig as any)?.extra?.apiUrl || (Constants.manifest as any)?.extra?.apiUrl;
+  const url = envUrl || configUrl;
+  if (!url) {
+    throw new Error(
+      'API base URL not configured. Set EXPO_PUBLIC_API_URL or extra.apiUrl in app.json'
+    );
+  }
   return url.replace(/\/$/, '');
 };
 
@@ -53,6 +59,10 @@ export const api = {
     request<T>(path, { ...opts, method: 'DELETE' }),
 };
 
+// Auth/Profile
+export const getMyProfile = (authToken?: string) => api.get('/api/auth/me', { authToken });
+export const updateMyProfile = (data: any, authToken?: string) => api.put('/api/auth/me', data, { authToken });
+
 // Department Management
 export const getDepartments = (authToken?: string) => api.get('/api/departments', { authToken });
 export const createDepartment = (data: any, authToken?: string) => api.post('/api/departments', data, { authToken });
@@ -65,6 +75,8 @@ export const deactivateDepartment = (id: string, authToken?: string) =>
 export const getAreas = (authToken?: string) => api.get('/api/areas', { authToken });
 export const getCategories = (authToken?: string) => api.get('/api/categories', { authToken });
 export const createArea = (data: any, authToken?: string) => api.post('/api/areas', data, { authToken });
+export const updateArea = (id: string, data: any, authToken?: string) =>
+  api.put(`/api/areas/${id}`, data, { authToken });
 export const createCategory = (data: any, authToken?: string) => api.post('/api/categories', data, { authToken });
 
 // Admin Management
@@ -93,5 +105,24 @@ export const submitComplaint = (data: SubmitComplaintPayload, authToken?: string
 
 export const getComplaints = (authToken?: string) => api.get('/api/complaints', { authToken });
 export const getComplaintMeta = (authToken?: string) => api.get('/api/complaints/meta', { authToken });
+export const getComplaintMedia = (complaintId: string, authToken?: string) =>
+  api.get(`/api/complaints/${complaintId}/media`, { authToken });
+
+export const uploadComplaintMedia = (
+  complaintId: string,
+  fileUri: string,
+  authToken?: string,
+  fileName = 'complaint-photo.jpg',
+  fileType = 'image/jpeg'
+) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: fileUri,
+    name: fileName,
+    type: fileType,
+  } as any);
+
+  return api.post(`/api/complaints/${complaintId}/media`, formData, { authToken });
+};
 
 export default api;

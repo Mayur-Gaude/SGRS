@@ -30,15 +30,27 @@ export default function AdminManagement() {
   // Zustand auth token
   const authToken = useAuthStore((state) => state.token) || undefined;
 
+  const normalizeArray = (res: any) => {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.items)) return res.items;
+    if (Array.isArray(res?.admins)) return res.admins;
+    if (Array.isArray(res?.departments)) return res.departments;
+    if (Array.isArray(res?.data?.admins)) return res.data.admins;
+    if (Array.isArray(res?.data?.departments)) return res.data.departments;
+    return [];
+  };
+
   useEffect(() => {
+    if (!authToken) return;
     fetchDepartments();
     fetchAdmins();
-  }, []);
+  }, [authToken]);
 
   const fetchDepartments = async () => {
     try {
       const res = await getDepartments(authToken);
-      setDepartments(res.data || res.departments || []);
+      setDepartments(normalizeArray(res));
     } catch (e) {
       setDepartments([]);
     }
@@ -47,7 +59,7 @@ export default function AdminManagement() {
   const fetchAdmins = async () => {
     try {
       const res = await getAdmins(authToken);
-      setAdmins(res.data || res.admins || []);
+      setAdmins(normalizeArray(res));
     } catch (e) {
       setAdmins([]);
     }
@@ -196,11 +208,11 @@ export default function AdminManagement() {
             >
               <Picker.Item label="Select Department" value="" />
 
-              {departments.map((dept) => (
+              {departments.map((dept, index) => (
                 <Picker.Item
-                  key={dept._id || dept.id || dept.code}
-                  label={dept.name}
-                  value={dept._id || dept.id || dept.code}
+                  key={dept._id || dept.id || `admin-dept-${index}`}
+                  label={String(dept?.name || "Unknown Department")}
+                  value={dept._id || dept.id || `invalid-${index}`}
                 />
               ))}
             </Picker>
@@ -229,9 +241,9 @@ export default function AdminManagement() {
 
         {admins.length === 0 && <Text>No admins found.</Text>}
 
-        {admins.map((admin) => (
+        {admins.map((admin, index) => (
           <View
-            key={admin.id || admin._id}
+            key={admin.id || admin._id || `admin-${index}`}
             style={{
               backgroundColor: "#f1f5f9",
               padding: 14,
@@ -243,19 +255,19 @@ export default function AdminManagement() {
           >
             <View>
               <Text style={{ fontWeight: "600" }}>
-                {admin.name || admin.full_name}
+                {String(admin?.name || admin?.full_name || "Unnamed Admin")}
               </Text>
 
-              <Text style={{ color: "#64748b" }}>{admin.email}</Text>
+              <Text style={{ color: "#64748b" }}>{String(admin?.email || "N/A")}</Text>
 
               <Text style={{ color: "#64748b" }}>
-                Department: {
+                {"Department: " + String(
                   admin.department_id?.name
                   || departments.find(
                         (d) => d._id === (admin.department_id?._id || admin.department_id)
                     )?.name
                   || "N/A"
-                }
+                )}
               </Text>
             </View>
 
