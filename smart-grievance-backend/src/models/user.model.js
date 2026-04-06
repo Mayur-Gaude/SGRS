@@ -70,6 +70,16 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        account_status: {
+            type: String,
+            enum: ["ACTIVE", "SUSPENDED", "BANNED"],
+            default: "ACTIVE",
+        },
+
+        account_reason: {
+            type: String,
+            default: null,
+        },
         login_attempts: {
             type: Number,
             default: 0,

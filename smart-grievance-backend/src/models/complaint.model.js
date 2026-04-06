@@ -50,9 +50,11 @@ const complaintSchema = new mongoose.Schema(
             enum: [
                 "SUBMITTED",
                 "UNDER_REVIEW",
+                "IN_PROGRESS",
                 "RESOLVED",
                 "REJECTED",
-                "CLOSED"
+                "CLOSED",
+                "REOPENED",
             ],
             default: "SUBMITTED",
         },

@@ -197,8 +197,8 @@ export const loginUser = async ({ email, password }) => {
     if (!user.email_verified || !user.phone_verified)
         throw new Error("Verify email and phone first");
 
-    // 🔥 OTP Required for Admins
-    if (["DEPT_ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+    // OTP required only for super admin (temporary until DEPT_ADMIN 2FA UI is added)
+    if (user.role === "SUPER_ADMIN") {
         const otp = generateOTP();
         const expiry = new Date(
             Date.now() + process.env.OTP_EXPIRE_MINUTES * 60 * 1000
