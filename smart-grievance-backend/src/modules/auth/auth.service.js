@@ -81,6 +81,40 @@ export const updateMyProfile = async (currentUser, data) => {
     };
 };
 
+export const uploadMyAvatar = async (currentUser, file) => {
+    const user = await User.findById(currentUser._id);
+    if (!user) throw new Error("User not found");
+    if (!file?.path) throw new Error("Avatar file is required");
+
+    const normalizedPath = String(file.path).replace(/\\/g, "/");
+    const uploadsPos = normalizedPath.toLowerCase().indexOf("uploads/");
+    const avatarPath = uploadsPos >= 0 ? normalizedPath.slice(uploadsPos) : normalizedPath;
+
+    const updated = await User.findByIdAndUpdate(
+        user._id,
+        { avatar_url: avatarPath },
+        { new: true }
+    )
+        .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
+        .populate("department_id", "name code")
+        .populate("area_ids", "name");
+
+    return {
+        id: updated._id,
+        full_name: updated.full_name,
+        email: updated.email,
+        phone: updated.phone,
+        avatar_url: updated.avatar_url,
+        role: updated.role,
+        department: updated.department_id || null,
+        areas: updated.area_ids || [],
+        email_verified: updated.email_verified,
+        phone_verified: updated.phone_verified,
+        is_active: updated.is_active,
+        createdAt: updated.createdAt,
+    };
+};
+
 //Registration flow
 export const registerUser = async ({ full_name, email, phone, password }) => {
     const existing = await User.findOne({

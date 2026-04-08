@@ -1,6 +1,7 @@
 import express from "express";
 import * as controller from "./auth.controller.js";
 import { protect } from "../../middleware/auth.middleware.js";
+import { upload } from "../../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router.post("/resend-otp", controller.resendOtp);
 router.post("/login", controller.login);
 router.get("/me", protect, controller.getMyProfile);
 router.put("/me", protect, controller.updateMyProfile);
+router.post("/me/avatar", protect, upload.single("file"), controller.uploadMyAvatar);
 router.post("/forgot-password", controller.requestPasswordReset);
 // router.post("/reset-password", controller.resetPassword);
 router.post("/forgot-password", controller.requestPasswordReset);

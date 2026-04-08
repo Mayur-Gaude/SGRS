@@ -46,6 +46,15 @@ export const updateMyProfile = async (req, res, next) => {
     }
 };
 
+export const uploadMyAvatar = async (req, res, next) => {
+    try {
+        const result = await authService.uploadMyAvatar(req.user, req.file);
+        return successResponse(res, result, "Profile avatar updated successfully.");
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const requestPasswordReset = async (req, res, next) => {
     try {
         const result = await authService.requestPasswordReset(req.body);
