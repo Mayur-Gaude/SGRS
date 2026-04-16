@@ -5,19 +5,13 @@ import Department from "../../models/department.model.js";
 import Area from "../../models/area.model.js";
 import Category from "../../models/category.model.js";
 import User from "../../models/user.model.js";
-<<<<<<< HEAD
-=======
 import { isPointInsidePolygon } from "../../utils/geofence.js";
->>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
 import { assignComplaint } from "../../services/assignment.service.js";
 
 import { generateComplaintNumber } from "../../services/complaintNumber.service.js";
 import { calculateSLA } from "../../services/sla.service.js";
 import { evaluateSLA } from "../../services/sla.service.js";
-<<<<<<< HEAD
-=======
 import { createUserNotification } from "../../services/notification.service.js";
->>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
 
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
@@ -105,9 +99,8 @@ export const submitComplaint = async (data, currentUser) => {
 
     // Auto assignment engine
     complaint = await assignComplaint(complaint);
-<<<<<<< HEAD
+
     console.log(complaint);
-=======
 
     await createUserNotification({
         user_id: currentUser._id,
@@ -117,7 +110,6 @@ export const submitComplaint = async (data, currentUser) => {
         message: `Your complaint ${complaint.complaint_number} has been submitted successfully.`,
         meta: { status: complaint.status },
     });
->>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
 
     return complaint;
 };
@@ -239,11 +231,11 @@ export const getAssignedComplaints = async (currentUser) => {
         throw new Error("Only department admins can access assigned complaints");
     }
 
-<<<<<<< HEAD
-    const complaints = await Complaint.find({
-=======
+
+
+
     let complaints = await Complaint.find({
->>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
+
         assigned_admin_id: currentUser._id
     })
         .populate("user_id", "full_name email phone")
@@ -252,8 +244,6 @@ export const getAssignedComplaints = async (currentUser) => {
         .populate("category_id", "name priority")
         .sort({ createdAt: -1 });
 
-<<<<<<< HEAD
-=======
     // Self-heal assignment: if nothing is assigned yet, claim eligible unassigned complaints
     if (complaints.length === 0) {
         const claimFilter = {
@@ -305,7 +295,6 @@ export const getAssignedComplaints = async (currentUser) => {
         }
     }
 
->>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
     return complaints;
 };
 
@@ -360,8 +349,6 @@ export const updateComplaintStatus = async (
         role: currentUser.role
     });
 
-<<<<<<< HEAD
-=======
     await createUserNotification({
         user_id: complaint.user_id,
         complaint_id: complaint._id,
@@ -371,6 +358,5 @@ export const updateComplaintStatus = async (
         meta: { status },
     });
 
->>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
     return complaint;
 };
