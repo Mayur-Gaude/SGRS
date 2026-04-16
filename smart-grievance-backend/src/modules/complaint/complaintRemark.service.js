@@ -1,4 +1,3 @@
-// complaintRemark.service.js
 import Complaint from "../../models/complaint.model.js";
 import { createTimelineEntry } from "../../utils/timeline.util.js";
 

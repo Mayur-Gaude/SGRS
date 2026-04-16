@@ -5,11 +5,19 @@ import Department from "../../models/department.model.js";
 import Area from "../../models/area.model.js";
 import Category from "../../models/category.model.js";
 import User from "../../models/user.model.js";
+<<<<<<< HEAD
+=======
+import { isPointInsidePolygon } from "../../utils/geofence.js";
+>>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
 import { assignComplaint } from "../../services/assignment.service.js";
 
 import { generateComplaintNumber } from "../../services/complaintNumber.service.js";
 import { calculateSLA } from "../../services/sla.service.js";
 import { evaluateSLA } from "../../services/sla.service.js";
+<<<<<<< HEAD
+=======
+import { createUserNotification } from "../../services/notification.service.js";
+>>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
 
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
@@ -35,6 +43,27 @@ export const submitComplaint = async (data, currentUser) => {
     const area = await Area.findById(area_id);
     if (!area || area.department_id.toString() !== department_id)
         throw new Error("Invalid area selected");
+
+    const hasAreaPolygon =
+        area?.geo_boundary?.type === "Polygon" &&
+        Array.isArray(area?.geo_boundary?.coordinates) &&
+        area.geo_boundary.coordinates.length > 0;
+
+    if (hasAreaPolygon) {
+        if (latitude === undefined || longitude === undefined) {
+            throw new Error("Location is required for this service area");
+        }
+
+        const isInside = isPointInsidePolygon(
+            Number(latitude),
+            Number(longitude),
+            area.geo_boundary.coordinates[0]
+        );
+
+        if (!isInside) {
+            throw new Error("Selected location is outside this service area boundary");
+        }
+    }
 
     // Validate Category
     const category = await Category.findById(category_id);
@@ -76,7 +105,19 @@ export const submitComplaint = async (data, currentUser) => {
 
     // Auto assignment engine
     complaint = await assignComplaint(complaint);
+<<<<<<< HEAD
     console.log(complaint);
+=======
+
+    await createUserNotification({
+        user_id: currentUser._id,
+        complaint_id: complaint._id,
+        type: "COMPLAINT_SUBMITTED",
+        title: "Complaint Submitted",
+        message: `Your complaint ${complaint.complaint_number} has been submitted successfully.`,
+        meta: { status: complaint.status },
+    });
+>>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
 
     return complaint;
 };
@@ -123,9 +164,34 @@ export const getComplaints = async (currentUser) => {
 };
 
 
+// ======================================================
+// 3️⃣ GET COMPLAINT FORM METADATA
+// ======================================================
+
+export const getComplaintMeta = async () => {
+    const [departments, areas, categories] = await Promise.all([
+        Department.find({ is_active: true })
+            .select("_id name code")
+            .sort({ name: 1 }),
+        Area.find({ is_active: true })
+            .select("_id name department_id pincode ward geo_boundary")
+            .sort({ name: 1 }),
+        Category.find({ is_active: true })
+            .select("_id name department_id priority")
+            .sort({ name: 1 }),
+    ]);
+
+    return {
+        departments,
+        areas,
+        categories,
+    };
+};
+
+
 
 // ======================================================
-// 3️⃣ GET SINGLE COMPLAINT DETAILS
+// 4️⃣ GET SINGLE COMPLAINT DETAILS
 // ======================================================
 
 export const getComplaintById = async (id, currentUser) => {
@@ -173,7 +239,11 @@ export const getAssignedComplaints = async (currentUser) => {
         throw new Error("Only department admins can access assigned complaints");
     }
 
+<<<<<<< HEAD
     const complaints = await Complaint.find({
+=======
+    let complaints = await Complaint.find({
+>>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
         assigned_admin_id: currentUser._id
     })
         .populate("user_id", "full_name email phone")
@@ -182,6 +252,60 @@ export const getAssignedComplaints = async (currentUser) => {
         .populate("category_id", "name priority")
         .sort({ createdAt: -1 });
 
+<<<<<<< HEAD
+=======
+    // Self-heal assignment: if nothing is assigned yet, claim eligible unassigned complaints
+    if (complaints.length === 0) {
+        const claimFilter = {
+            assigned_admin_id: null,
+            status: "SUBMITTED",
+        };
+
+        if (Array.isArray(currentUser.area_ids) && currentUser.area_ids.length > 0) {
+            claimFilter.area_id = { $in: currentUser.area_ids };
+        } else if (currentUser.department_id) {
+            claimFilter.department_id = currentUser.department_id;
+        }
+
+        const unassigned = await Complaint.find(claimFilter)
+            .sort({ createdAt: 1 })
+            .limit(100);
+
+        if (unassigned.length > 0) {
+            const ids = unassigned.map((c) => c._id);
+
+            await Complaint.updateMany(
+                { _id: { $in: ids } },
+                {
+                    $set: {
+                        assigned_admin_id: currentUser._id,
+                        status: "UNDER_REVIEW",
+                    },
+                }
+            );
+
+            await ComplaintTimeline.insertMany(
+                ids.map((id) => ({
+                    complaint_id: id,
+                    action: "ASSIGNED",
+                    description: `Complaint auto-assigned to ${currentUser.full_name || "department admin"}`,
+                    performed_by: currentUser._id,
+                    role: "SYSTEM",
+                }))
+            );
+
+            complaints = await Complaint.find({
+                assigned_admin_id: currentUser._id
+            })
+                .populate("user_id", "full_name email phone")
+                .populate("department_id", "name")
+                .populate("area_id", "name")
+                .populate("category_id", "name priority")
+                .sort({ createdAt: -1 });
+        }
+    }
+
+>>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
     return complaints;
 };
 
@@ -236,5 +360,17 @@ export const updateComplaintStatus = async (
         role: currentUser.role
     });
 
+<<<<<<< HEAD
+=======
+    await createUserNotification({
+        user_id: complaint.user_id,
+        complaint_id: complaint._id,
+        type: status === "REJECTED" ? "COMPLAINT_REJECTED" : "STATUS_UPDATED",
+        title: `Complaint ${status.replace("_", " ")}`,
+        message: `Your complaint ${complaint.complaint_number} status was updated to ${status}.`,
+        meta: { status },
+    });
+
+>>>>>>> 35c602d3648ad382e85c5fd951f37272a798ad0e
     return complaint;
 };

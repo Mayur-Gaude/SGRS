@@ -23,6 +23,13 @@ router.get(
     controller.getComplaints
 );
 
+// Get complaint form metadata (departments, areas, categories)
+router.get(
+    "/meta",
+    protect,
+    controller.getComplaintMeta
+);
+
 // Get assigned complaints for DEPT_ADMIN
 router.get(
     "/assigned",

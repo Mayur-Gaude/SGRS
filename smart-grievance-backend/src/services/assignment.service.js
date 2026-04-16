@@ -29,6 +29,17 @@ const findAdminForArea = async (department_id, area_id) => {
         currentArea = await Area.findById(currentArea.parent_area_id);
     }
 
+    // Fallback: assign to any active department admin for this department
+    const fallbackAdmin = await User.findOne({
+        role: "DEPT_ADMIN",
+        department_id: department_id,
+        is_active: true,
+    }).sort({ createdAt: 1 });
+
+    if (fallbackAdmin) {
+        return fallbackAdmin;
+    }
+
     return null;
 };
 

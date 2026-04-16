@@ -9,6 +9,113 @@ import { sendSMSOTP } from "../../services/sms.service.js";
 import { generateToken } from "../../services/jwt.service.js";
 import { generateResetToken } from "../../services/resetToken.service.js";
 
+export const getMyProfile = async (currentUser) => {
+    const user = await User.findById(currentUser._id)
+        .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
+        .populate("department_id", "name code")
+        .populate("area_ids", "name");
+
+    if (!user) throw new Error("User not found");
+
+    return {
+        id: user._id,
+        full_name: user.full_name,
+        email: user.email,
+        phone: user.phone,
+        avatar_url: user.avatar_url,
+        role: user.role,
+        department: user.department_id || null,
+        areas: user.area_ids || [],
+        email_verified: user.email_verified,
+        phone_verified: user.phone_verified,
+        is_active: user.is_active,
+        createdAt: user.createdAt,
+    };
+};
+
+export const updateMyProfile = async (currentUser, data) => {
+    const user = await User.findById(currentUser._id);
+    if (!user) throw new Error("User not found");
+
+    const payload = {};
+
+    if (typeof data.full_name === "string" && data.full_name.trim()) {
+        payload.full_name = data.full_name.trim();
+    }
+
+    if (typeof data.phone === "string" && data.phone.trim()) {
+        const nextPhone = data.phone.trim();
+        if (nextPhone !== user.phone) {
+            const existingPhone = await User.findOne({
+                phone: nextPhone,
+                _id: { $ne: user._id },
+            });
+            if (existingPhone) throw new Error("Phone already in use");
+        }
+        payload.phone = nextPhone;
+    }
+
+    if (typeof data.avatar_url === "string") {
+        payload.avatar_url = data.avatar_url.trim() || null;
+    }
+
+    const updated = await User.findByIdAndUpdate(user._id, payload, {
+        new: true,
+    })
+        .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
+        .populate("department_id", "name code")
+        .populate("area_ids", "name");
+
+    return {
+        id: updated._id,
+        full_name: updated.full_name,
+        email: updated.email,
+        phone: updated.phone,
+        avatar_url: updated.avatar_url,
+        role: updated.role,
+        department: updated.department_id || null,
+        areas: updated.area_ids || [],
+        email_verified: updated.email_verified,
+        phone_verified: updated.phone_verified,
+        is_active: updated.is_active,
+        createdAt: updated.createdAt,
+    };
+};
+
+export const uploadMyAvatar = async (currentUser, file) => {
+    const user = await User.findById(currentUser._id);
+    if (!user) throw new Error("User not found");
+    if (!file?.path) throw new Error("Avatar file is required");
+
+    const normalizedPath = String(file.path).replace(/\\/g, "/");
+    const uploadsPos = normalizedPath.toLowerCase().indexOf("uploads/");
+    const avatarPath = uploadsPos >= 0 ? normalizedPath.slice(uploadsPos) : normalizedPath;
+
+    const updated = await User.findByIdAndUpdate(
+        user._id,
+        { avatar_url: avatarPath },
+        { new: true }
+    )
+        .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
+        .populate("department_id", "name code")
+        .populate("area_ids", "name");
+
+    return {
+        id: updated._id,
+        full_name: updated.full_name,
+        email: updated.email,
+        phone: updated.phone,
+        avatar_url: updated.avatar_url,
+        role: updated.role,
+        department: updated.department_id || null,
+        areas: updated.area_ids || [],
+        email_verified: updated.email_verified,
+        phone_verified: updated.phone_verified,
+        is_active: updated.is_active,
+        createdAt: updated.createdAt,
+    };
+};
+
 //Registration flow
 export const registerUser = async ({ full_name, email, phone, password }) => {
     const existing = await User.findOne({
@@ -125,8 +232,8 @@ export const loginUser = async ({ email, password }) => {
     if (!user.email_verified || !user.phone_verified)
         throw new Error("Verify email and phone first");
 
-    // 🔥 OTP Required for Admins
-    if (["DEPT_ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+    // OTP required only for super admin (temporary until DEPT_ADMIN 2FA UI is added)
+    if (user.role === "SUPER_ADMIN") {
         const otp = generateOTP();
         const expiry = new Date(
             Date.now() + process.env.OTP_EXPIRE_MINUTES * 60 * 1000

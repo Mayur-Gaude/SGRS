@@ -16,7 +16,6 @@ router.post(
 router.get(
     "/",
     protect,
-    authorize("SUPER_ADMIN", "USER"),
     controller.getAllDepartments
 );
 

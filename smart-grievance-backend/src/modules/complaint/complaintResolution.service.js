@@ -1,7 +1,7 @@
-//complaintResolution.service.js
 import Complaint from "../../models/complaint.model.js";
 import { createTimelineEntry } from "../../utils/timeline.util.js";
 import { evaluateSLA } from "../../services/sla.service.js";
+import { createUserNotification } from "../../services/notification.service.js";
 
 export const resolveComplaint = async (
     complaintId,
@@ -50,6 +50,15 @@ export const resolveComplaint = async (
         description: resolutionRemark,
         performed_by: currentUser._id,
         role: currentUser.role,
+    });
+
+    await createUserNotification({
+        user_id: complaint.user_id,
+        complaint_id: complaint._id,
+        type: "COMPLAINT_RESOLVED",
+        title: "Complaint Resolved",
+        message: `Your complaint ${complaint.complaint_number} has been resolved.`,
+        meta: { status: complaint.status },
     });
 
     return complaint;

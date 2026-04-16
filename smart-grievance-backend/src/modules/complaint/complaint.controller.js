@@ -39,7 +39,22 @@ export const getComplaints = async (req, res, next) => {
 
 
 // ======================================================
-// 3️⃣ GET COMPLAINT DETAILS
+// 3️⃣ GET COMPLAINT FORM METADATA
+// ======================================================
+
+export const getComplaintMeta = async (req, res, next) => {
+    try {
+        const result = await service.getComplaintMeta();
+
+        return successResponse(res, result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ======================================================
+// 4️⃣ GET COMPLAINT DETAILS
 // ======================================================
 
 export const getComplaintById = async (req, res, next) => {

@@ -1,6 +1,30 @@
 //area.service.js
 import Area from "../../models/area.model.js";
 import Department from "../../models/department.model.js";
+import { validatePolygonGeoBoundary } from "../../utils/geofence.js";
+
+const normalizeGeoBoundary = (geoBoundary) => {
+    if (!geoBoundary) return undefined;
+
+    if (geoBoundary.type !== "Polygon") {
+        return geoBoundary;
+    }
+
+    const normalizedCoordinates = (geoBoundary.coordinates || []).map((ring) =>
+        Array.isArray(ring)
+            ? ring.map((point) =>
+                Array.isArray(point) && point.length === 2
+                    ? [Number(point[0]), Number(point[1])]
+                    : point
+            )
+            : ring
+    );
+
+    return {
+        type: "Polygon",
+        coordinates: normalizedCoordinates,
+    };
+};
 
 export const createArea = async (data) => {
     const department = await Department.findById(data.department_id);
@@ -15,10 +39,15 @@ export const createArea = async (data) => {
         level = parent.level + 1;
     }
 
-    const area = await Area.create({
+    const payload = {
         ...data,
         level,
-    });
+        geo_boundary: normalizeGeoBoundary(data.geo_boundary),
+    };
+
+    validatePolygonGeoBoundary(payload.geo_boundary);
+
+    const area = await Area.create(payload);
 
     return area;
 };
@@ -40,7 +69,14 @@ export const getAreaById = async (id) => {
 };
 
 export const updateArea = async (id, data) => {
-    const area = await Area.findByIdAndUpdate(id, data, {
+    const payload = { ...data };
+
+    if (data.geo_boundary !== undefined) {
+        payload.geo_boundary = normalizeGeoBoundary(data.geo_boundary);
+        validatePolygonGeoBoundary(payload.geo_boundary);
+    }
+
+    const area = await Area.findByIdAndUpdate(id, payload, {
         new: true,
     });
 

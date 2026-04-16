@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema(
             index: true,
         },
 
+        avatar_url: {
+            type: String,
+            default: null,
+        },
+
         password_hash: {
             type: String,
             required: true,

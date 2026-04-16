@@ -11,6 +11,7 @@ import violationRoutes from "./modules/violation/violation.routes.js";
 import banRoutes from "./modules/ban/ban.routes.js";
 import appealRoutes from "./modules/appeal/appeal.routes.js";
 import analyticsRoutes from "./modules/analytics/analytics.routes.js";
+import notificationRoutes from "./modules/notification/notification.routes.js";
 
 const router = express.Router();
 
@@ -33,6 +34,7 @@ router.use("/violations", violationRoutes);
 router.use("/bans", banRoutes);
 router.use("/appeals", appealRoutes);
 router.use("/analytics", analyticsRoutes);
+router.use("/notifications", notificationRoutes);
 
 
 
