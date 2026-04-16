@@ -1,3 +1,4 @@
+// complaint.service.js 
 import Complaint from "../../models/complaint.model.js";
 import ComplaintTimeline from "../../models/complaintTimeline.model.js";
 import Department from "../../models/department.model.js";
@@ -75,6 +76,7 @@ export const submitComplaint = async (data, currentUser) => {
 
     // Auto assignment engine
     complaint = await assignComplaint(complaint);
+    console.log(complaint);
 
     return complaint;
 };

@@ -1,3 +1,4 @@
+//category.service.js
 import Category from "../../models/category.model.js";
 import Department from "../../models/department.model.js";
 
@@ -29,7 +30,8 @@ export const getCategoryById = async (id) => {
 
 export const updateCategory = async (id, data) => {
     const category = await Category.findByIdAndUpdate(id, data, {
-        new: true,
+        // new: true,
+        returnDocument: "after"
     });
 
     if (!category) throw new Error("Category not found");
@@ -40,7 +42,8 @@ export const deactivateCategory = async (id) => {
     const category = await Category.findByIdAndUpdate(
         id,
         { is_active: false },
-        { new: true }
+        // { new: true }
+        { returnDocument: "after" }
     );
 
     if (!category) throw new Error("Category not found");

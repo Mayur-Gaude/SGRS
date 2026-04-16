@@ -1,3 +1,4 @@
+// admin.service.js
 import bcrypt from "bcryptjs";
 import User from "../../models/user.model.js";
 import Department from "../../models/department.model.js";
@@ -86,6 +87,62 @@ export const deactivateDepartmentAdmin = async (admin_id) => {
     );
 
     if (!admin) throw new Error("Admin not found");
+
+    return admin;
+};
+
+
+export const updateDepartmentAdmin = async (admin_id, data) => {
+    const {
+        full_name,
+        email,
+        phone,
+        department_id,
+        area_ids,
+    } = data;
+
+    const admin = await User.findById(admin_id);
+
+    if (!admin || admin.role !== "DEPT_ADMIN")
+        throw new Error("Admin not found");
+
+    // Validate department
+    if (department_id) {
+        const dept = await Department.findById(department_id);
+        if (!dept) throw new Error("Department not found");
+        admin.department_id = department_id;
+    }
+
+    // Validate areas
+    if (area_ids && area_ids.length > 0) {
+        const areas = await Area.find({
+            _id: { $in: area_ids },
+            department_id: admin.department_id,
+        });
+
+        if (areas.length !== area_ids.length)
+            throw new Error("Invalid area assignment");
+
+        admin.area_ids = area_ids;
+    }
+
+    // Update basic fields
+    if (full_name) admin.full_name = full_name;
+    if (email) admin.email = email;
+    if (phone) admin.phone = phone;
+
+    await admin.save();
+
+    return admin;
+};
+
+export const getDepartmentAdminById = async (id) => {
+    const admin = await User.findById(id)
+        .populate("department_id", "name")
+        .populate("area_ids", "name");
+
+    if (!admin || admin.role !== "DEPT_ADMIN")
+        throw new Error("Admin not found");
 
     return admin;
 };

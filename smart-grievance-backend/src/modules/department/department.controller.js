@@ -1,3 +1,4 @@
+//deparment.controller.js
 import * as service from "./department.service.js";
 import { successResponse } from "../../utils/response.js";
 
@@ -45,6 +46,15 @@ export const deactivateDepartment = async (req, res, next) => {
         const result = await service.deactivateDepartment(
             req.params.id
         );
+        return successResponse(res, result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const activateDepartment = async (req, res, next) => {
+    try {
+        const result = await service.activateDepartment(req.params.id);
         return successResponse(res, result);
     } catch (error) {
         next(error);

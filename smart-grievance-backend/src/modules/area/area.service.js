@@ -1,3 +1,4 @@
+//area.service.js
 import Area from "../../models/area.model.js";
 import Department from "../../models/department.model.js";
 

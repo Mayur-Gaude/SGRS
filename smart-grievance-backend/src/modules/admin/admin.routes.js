@@ -1,3 +1,4 @@
+// admin.routes.js
 import express from "express";
 import * as controller from "./admin.controller.js";
 import { protect } from "../../middleware/auth.middleware.js";
@@ -31,6 +32,20 @@ router.patch(
     protect,
     authorize("SUPER_ADMIN"),
     controller.deactivateDepartmentAdmin
+);
+
+router.put(
+    "/department-admin/:id",
+    protect,
+    authorize("SUPER_ADMIN"),
+    controller.updateDepartmentAdmin
+);
+
+router.get(
+    "/department-admin/:id",
+    protect,
+    authorize("SUPER_ADMIN"),
+    controller.getDepartmentAdminById
 );
 
 export default router;

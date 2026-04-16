@@ -1,3 +1,4 @@
+//area.routes.js
 import express from "express";
 import * as controller from "./area.controller.js";
 import { protect } from "../../middleware/auth.middleware.js";
@@ -15,7 +16,7 @@ router.post(
 router.get(
     "/",
     protect,
-    authorize("SUPER_ADMIN"),
+    authorize("SUPER_ADMIN", "USER"),
     controller.getAllAreas
 );
 
@@ -39,5 +40,6 @@ router.patch(
     authorize("SUPER_ADMIN"),
     controller.deactivateArea
 );
+
 
 export default router;
