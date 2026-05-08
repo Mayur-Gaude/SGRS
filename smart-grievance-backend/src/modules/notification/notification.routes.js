@@ -8,5 +8,6 @@ const router = express.Router();
 router.get("/", protect, authorize("USER"), controller.getMyNotifications);
 router.patch("/:id/read", protect, authorize("USER"), controller.markNotificationRead);
 router.patch("/read-all", protect, authorize("USER"), controller.markAllNotificationsRead);
+router.delete("/:id", protect, authorize("USER"), controller.deleteNotification);
 
 export default router;

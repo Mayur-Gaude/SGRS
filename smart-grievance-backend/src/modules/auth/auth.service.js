@@ -59,7 +59,7 @@ export const updateMyProfile = async (currentUser, data) => {
     }
 
     const updated = await User.findByIdAndUpdate(user._id, payload, {
-        new: true,
+        returnDocument: "after",
     })
         .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
         .populate("department_id", "name code")
@@ -93,7 +93,7 @@ export const uploadMyAvatar = async (currentUser, file) => {
     const updated = await User.findByIdAndUpdate(
         user._id,
         { avatar_url: avatarPath },
-        { new: true }
+        { returnDocument: "after" }
     )
         .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
         .populate("department_id", "name code")

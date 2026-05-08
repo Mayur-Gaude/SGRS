@@ -15,7 +15,7 @@ export const uploadComplaintMedia = async (
     const media = await ComplaintMedia.create({
         complaint_id,
         media_type: "PHOTO",
-        media_url: file.path,
+        media_url: file.secure_url || file.path,
         uploaded_by: currentUser._id,
     });
 
