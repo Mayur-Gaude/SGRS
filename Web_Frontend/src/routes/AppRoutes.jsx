@@ -23,6 +23,16 @@ import AssignedComplaints from "../pages/DepartmentAdmin/AssignedComplaints";
 import ComplaintDetails from "../pages/DepartmentAdmin/ComplaintDetails";
 import UserDashboard from "../pages/User/Dashboard";
 import DeptAdminDashboard from "../pages/DepartmentAdmin/Dashboard";
+import UserComplaintDetails from "../pages/User/ComplaintDetails";
+import ReopenRequests from "../pages/DepartmentAdmin/ReopenRequests";
+import AppealPage from "../pages/User/AppealPage";
+import CreateViolation from "../pages/DepartmentAdmin/CreateViolation";
+import CreateBan from "../pages/superAdmin/CreateBan";
+import AppealReview from "../pages/superAdmin/AppealReview";
+import ViolationHistory from "../pages/DepartmentAdmin/ViolationHistory";
+import ViolationManagement from "../pages/superAdmin/ViolationManagement";
+import ProtectedRoute from "./ProtectedRoute";
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -77,14 +87,85 @@ const AppRoutes = () => {
         element={<CreateAdmin />}
       />
 
-    <Route path="/user/dashboard" element={<UserDashboard />} />
-    <Route path="/user/create-complaint" element={<CreateComplaint />} />
-    <Route path="/user/complaints" element={<Complaints />} />
+    <Route path="/user/dashboard" element={
+      <ProtectedRoute
+        allowedRoles={["USER"]}
+      >
+        <UserDashboard />
+      </ProtectedRoute>} 
+    />
+    <Route path="/user/create-complaint" element={
+      <ProtectedRoute
+        allowedRoles={["USER"]}
+      >
+        <CreateComplaint />
+      </ProtectedRoute>}
+    />
+    <Route path="/user/complaints" element={
+      <ProtectedRoute
+        allowedRoles={["USER"]}
+      >
+        <Complaints />
+      </ProtectedRoute>}
+    />
 
       <Route path="/dept-admin/dashboard" element={<DeptAdminDashboard/>} />
       <Route path="/dept-admin/complaints" element={<AssignedComplaints />} />
       <Route path="/dept-admin/complaints/:id" element={<ComplaintDetails />} />
 
+      <Route
+        path="/user/complaints/:id"
+        element={<UserComplaintDetails />}
+      />
+
+      {/* <Route
+        path="/dept-admin/reopen-requests"
+        element={<ReopenRequests />}
+      /> */}
+
+      <Route path="/user/appeals/:banId" element={<AppealPage />} />
+      <Route
+        path="/user/appeals"
+        element={
+          <ProtectedRoute
+            allowedRoles={["USER"]}
+          >
+            <AppealPage />
+          </ProtectedRoute>
+        }
+      />
+
+
+      <Route
+        path="/dept-admin/violations/:complaintId"
+        element={<CreateViolation />}
+      />
+
+      <Route
+        path="/dept-admin/reopen-requests"
+        element={<ReopenRequests />}
+      />
+
+
+      <Route
+        path="/super-admin/create-ban/:violationId"
+        element={<CreateBan />}
+      />
+
+      <Route
+        path="/super-admin/appeals"
+        element={<AppealReview />}
+      />
+
+      <Route
+        path="/dept-admin/violations"
+        element={<ViolationHistory />}
+      />
+
+      <Route
+        path="/super-admin/management"
+        element={<ViolationManagement />}
+      />
       </Routes>
     </BrowserRouter>
   );

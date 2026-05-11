@@ -23,12 +23,35 @@ const Login = () => {
         navigate("/verify-2fa", { state: data });
         return;
       }
+      // if (
+      //   data.requires_2fa ||
+      //   data.user.role === "DEPT_ADMIN" ||
+      //   data.user.role === "SUPER_ADMIN"
+      // ) {
+      //   navigate("/verify-2fa", { state: { user_id: data.user.id } });
+      //   return;
+      // }
 
       // ✅ Normal login
       login(data);
-      if(data.user.role === "USER"){
+      // if(data.user.role === "USER"){
+      //   navigate("/user/dashboard");
+      // }
+      if (data.user.role === "USER") {
+
+      // 🚨 banned user
+      if (
+        data.user.account_status ===
+        "BANNED"
+      ) {
+        console.log(data);
+        navigate("/user/appeals");
+
+      } else {
+        console.log(data);
         navigate("/user/dashboard");
       }
+    }
 
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
@@ -52,7 +75,7 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Form Fields */}
+          {/* Form Fields */} 
           <div className="space-y-4 mb-6">
             <Input
               type="email"
@@ -106,7 +129,7 @@ const Login = () => {
           {/* Footer */}
           <div className="mt-6 pt-6 border-t border-blue-100">
             <p className="text-center text-xs text-blue-500">
-              © 2024 Smart Grievance System. All rights reserved.
+              © 2026 Smart Grievance System. All rights reserved.
             </p>
           </div>
         </form>

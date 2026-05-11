@@ -57,3 +57,86 @@ export const createBan = async (data, currentUser) => {
 
     return ban;
 };
+
+// export const getMyBan = async (currentUser) => {
+
+//     const ban = await Ban.findOne({
+//         user_id: currentUser._id
+//     }).sort({ createdAt: -1 });
+
+//     if (!ban) {
+//         throw new Error("No active ban found");
+//     }
+
+//     return ban;
+// };
+
+// export const getMyBan = async (req, res) => {
+//     try {
+//         const ban = await Ban.findOne({ user_id: req.user._id }).sort({ createdAt: -1 });
+
+//         if (!ban) {
+//             return res.status(404).json({ success: false, message: "No active ban found" });
+//         }
+
+//         res.json({ success: true, data: ban });
+//     } catch (err) {
+//         res.status(500).json({ success: false, message: err.message });
+//     }
+// };
+
+
+export const getMyBan = async (
+    currentUser
+) => {
+
+    const ban = await Ban.findOne({
+        user_id: currentUser._id
+    })
+        .populate(
+            "violation_id",
+            "violation_type severity"
+        )
+        .sort({ created_at: -1 });
+
+    // if (!ban) {
+    //     throw new Error(
+    //         "No active ban found"
+    //     );
+    // }
+
+    if (!ban) {
+        return { status: "NOT_FOUND", ban: null };
+    }
+
+    // 🔥 TEMP BAN EXPIRED
+    if (
+        ban.ban_type === "TEMPORARY" &&
+        ban.ban_end &&
+        new Date() >
+        new Date(ban.ban_end)
+    ) {
+
+        // restore account
+        await User.findByIdAndUpdate(
+            currentUser._id,
+            {
+                account_status: "ACTIVE",
+                account_reason: null,
+            }
+        );
+
+        // remove ban
+        await Ban.findByIdAndDelete(
+            ban._id
+        );
+
+        // throw new Error(
+        //     "Ban expired"
+        // );
+        return { status: "EXPIRED", ban: null };
+    }
+
+    // return ban;
+    return { status: "ACTIVE", ban };
+};

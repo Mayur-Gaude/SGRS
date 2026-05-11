@@ -105,7 +105,8 @@ export const uploadMyAvatar = async (currentUser, file) => {
         full_name: updated.full_name,
         email: updated.email,
         phone: updated.phone,
-        avatar_url: updated.avatar_url,
+        avatar_url: updated.avatar_url
+        ,
         role: updated.role,
         department: updated.department_id || null,
         areas: updated.area_ids || [],
@@ -233,7 +234,7 @@ export const loginUser = async ({ email, password }) => {
         throw new Error("Verify email and phone first");
 
     // OTP required only for super admin (temporary until DEPT_ADMIN 2FA UI is added)
-    if (user.role === "SUPER_ADMIN") {
+    if (["DEPT_ADMIN", "SUPER_ADMIN"].includes(user.role)) {
         const otp = generateOTP();
         const expiry = new Date(
             Date.now() + process.env.OTP_EXPIRE_MINUTES * 60 * 1000
@@ -268,6 +269,11 @@ export const loginUser = async ({ email, password }) => {
             full_name: user.full_name,
             email: user.email,
             role: user.role,
+            account_status:
+                user.account_status,
+
+            account_reason:
+                user.account_reason,
         },
     };
 };

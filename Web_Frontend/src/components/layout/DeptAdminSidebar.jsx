@@ -50,6 +50,24 @@ const DeptAdminSidebar = () => {
         />
       </nav>
 
+      {/* <li>
+        <Link to="/dept-admin/reopen-requests">
+          Reopen Requests
+        </Link>
+      </li> */}
+
+      <li>
+        <Link to="/dept-admin/violations">
+          Violations
+        </Link>
+      </li>
+
+      <li>
+        <Link to="/dept-admin/reopen-requests">
+          Reopen Requests
+        </Link>
+      </li>
+
       {/* Logout Button */}
       <div className="border-t border-gray-800 pt-4">
         <button

@@ -24,6 +24,10 @@ const UserSidebar = () => {
         </li>
 
         <li>
+          <Link to="/user/appeals">Appeals</Link>
+        </li>
+
+        <li>
           <button
             onClick={() => {
               logout();

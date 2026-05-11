@@ -14,3 +14,59 @@ export const createViolation = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getViolations = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const result = await service.getViolations(
+            req.user
+        );
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        // console.log(error);
+        next(error);
+    }
+};
+
+export const getViolationManagement = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const result =
+            await service.getViolationManagement();
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+};
+
+export const getViolationById = async (
+    req,
+    res,
+    next
+) => {
+    try {
+
+        const result =
+            await service.getViolationById(
+                req.params.id
+            );
+
+        return successResponse(res, result);
+
+    } catch (error) {
+        next(error);
+    }
+};

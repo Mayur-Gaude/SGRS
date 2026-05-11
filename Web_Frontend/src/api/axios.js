@@ -1,18 +1,49 @@
+// import axios from "axios";
+
+// const API = axios.create({
+//     baseURL: "http://localhost:5000/api",
+// });
+
+// API.interceptors.request.use(
+//     (config) => {
+
+//         const token =
+//             localStorage.getItem("token");
+
+//         if (token) {
+//             config.headers.Authorization =
+//                 `Bearer ${token}`;
+//         }
+
+//         return config;
+//     },
+
+//     (error) => Promise.reject(error)
+// );
+
+// export default API;
+
 import axios from "axios";
 
 const API = axios.create({
     baseURL: "http://localhost:5000/api",
 });
 
-// Attach token automatically
-API.interceptors.request.use((req) => {
-    const user = JSON.parse(localStorage.getItem("user"));
+API.interceptors.request.use(
+    (config) => {
 
-    if (user?.token) {
-        req.headers.Authorization = `Bearer ${user.token}`;
-    }
+        const token =
+            localStorage.getItem("token");
 
-    return req;
-});
+        if (token) {
+            config.headers.Authorization =
+                `Bearer ${token}`;
+        }
+
+        return config;
+    },
+
+    (error) => Promise.reject(error)
+);
 
 export default API;

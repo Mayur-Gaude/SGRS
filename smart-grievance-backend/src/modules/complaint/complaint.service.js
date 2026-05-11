@@ -12,6 +12,7 @@ import { generateComplaintNumber } from "../../services/complaintNumber.service.
 import { calculateSLA } from "../../services/sla.service.js";
 import { evaluateSLA } from "../../services/sla.service.js";
 import { createUserNotification } from "../../services/notification.service.js";
+import { calculateComplaintRisk } from "../../services/complaintRisk.service.js";
 
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
@@ -67,6 +68,11 @@ export const submitComplaint = async (data, currentUser) => {
     // Generate Complaint Number
     const complaintNumber = await generateComplaintNumber();
 
+    // Calculate complaint risk
+    const risk = calculateComplaintRisk({
+        title,
+        description,
+    });
     // Calculate SLA
     const { responseDeadline, resolutionDeadline } =
         calculateSLA(category);
@@ -84,6 +90,8 @@ export const submitComplaint = async (data, currentUser) => {
         longitude,
         pincode,
         priority: category.priority,
+        risk_level: risk.level,
+        risk_score: risk.score,
         sla_response_deadline: responseDeadline,
         sla_resolution_deadline: resolutionDeadline,
     });
@@ -100,7 +108,7 @@ export const submitComplaint = async (data, currentUser) => {
     // Auto assignment engine
     complaint = await assignComplaint(complaint);
 
-    console.log(complaint);
+    // console.log(complaint);
 
     await createUserNotification({
         user_id: currentUser._id,
@@ -304,7 +312,8 @@ export const getAssignedComplaints = async (currentUser) => {
 export const updateComplaintStatus = async (
     complaintId,
     status,
-    currentUser
+    currentUser,
+    rejection_reason = null
 ) => {
 
     if (currentUser.role !== "DEPT_ADMIN") {
@@ -335,16 +344,24 @@ export const updateComplaintStatus = async (
         throw new Error("Invalid status update");
     }
 
+    // 🔥 Rejection requires reason
+    console.log(rejection_reason);
+    if (status === "REJECTED" && !rejection_reason) {
+        throw new Error("Rejection reason required");
+    }
+
     complaint = await evaluateSLA(complaint); // Initial SLA evaluation
     complaint.status = status;
 
+    complaint.rejection_reason = rejection_reason || null;
     await complaint.save();
 
     // Create timeline event
     await ComplaintTimeline.create({
         complaint_id: complaint._id,
         action: "STATUS_UPDATED",
-        description: `Status updated to ${status}`,
+        // description: `Status updated to ${status}`,
+        description: status === "REJECTED" ? rejection_reason : `Complaint marked as ${status}`,
         performed_by: currentUser._id,
         role: currentUser.role
     });

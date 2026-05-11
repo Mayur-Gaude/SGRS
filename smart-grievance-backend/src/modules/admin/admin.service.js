@@ -19,6 +19,7 @@ export const createDepartmentAdmin = async (data) => {
         $or: [{ email }, { phone }],
     });
 
+
     if (existing) throw new Error("User already exists");
 
     const department = await Department.findById(department_id);
