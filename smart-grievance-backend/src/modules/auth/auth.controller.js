@@ -1,3 +1,4 @@
+//auth.controller.js
 import * as authService from "./auth.service.js";
 import { successResponse } from "../../utils/response.js";
 

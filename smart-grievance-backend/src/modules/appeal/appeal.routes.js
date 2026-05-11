@@ -30,4 +30,13 @@ router.patch(
     controller.reviewAppeal
 );
 
+router.get(
+    "/",
+    protect,
+    authorize("SUPER_ADMIN"),
+    controller.getAppeals
+);
+
+
+
 export default router;

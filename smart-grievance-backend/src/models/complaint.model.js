@@ -55,6 +55,7 @@ const complaintSchema = new mongoose.Schema(
                 "REJECTED",
                 "CLOSED",
                 "REOPENED",
+                "REOPEN_REQUESTED",
             ],
             default: "SUBMITTED",
         },
@@ -76,6 +77,35 @@ const complaintSchema = new mongoose.Schema(
         is_escalated: {
             type: Boolean,
             default: false,
+        },
+        feedback_submitted: {
+            type: Boolean,
+            default: false,
+        },
+        rejection_reason: {
+            type: String,
+            default: null,
+        },
+
+        risk_score: {
+            type: Number,
+            default: 0,
+        },
+
+        risk_level: {
+            type: String,
+            enum: ["LOW", "MEDIUM", "HIGH"],
+            default: "LOW",
+        },
+
+        feedback_submitted: {
+            type: Boolean,
+            default: false,
+        },
+
+        reopen_count: {
+            type: Number,
+            default: 0,
         },
     },
     { timestamps: true }

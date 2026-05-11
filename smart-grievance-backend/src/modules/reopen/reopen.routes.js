@@ -21,4 +21,11 @@ router.patch(
     controller.reviewReopen
 );
 
+router.get(
+    "/",
+    protect,
+    authorize("DEPT_ADMIN"),
+    controller.getReopens
+);
+
 export default router;

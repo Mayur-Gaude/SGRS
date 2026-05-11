@@ -71,3 +71,9 @@ export const reviewAppeal = async (
 
     return appeal;
 };
+
+export const getAppeals = async () => {
+    return BanAppeal.find({ status: "PENDING" })
+        .populate("user_id", "full_name")
+        .populate("ban_id");
+};

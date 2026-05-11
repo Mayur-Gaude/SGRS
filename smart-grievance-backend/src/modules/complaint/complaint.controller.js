@@ -1,3 +1,4 @@
+//complaint.controller.js
 import * as service from "./complaint.service.js";
 import { successResponse } from "../../utils/response.js";
 import * as remarkService from "./complaintRemark.service.js";
@@ -91,17 +92,19 @@ export const getAssignedComplaints = async (req, res, next) => {
 export const updateComplaintStatus = async (req, res, next) => {
     try {
 
-        const { status } = req.body;
+        const { status, rejection_reason } = req.body;
 
         const result = await service.updateComplaintStatus(
             req.params.id,
             status,
-            req.user
+            req.user,
+            rejection_reason,
         );
 
         return successResponse(res, result);
 
     } catch (error) {
+        // console.log(error);
         next(error);
     }
 };

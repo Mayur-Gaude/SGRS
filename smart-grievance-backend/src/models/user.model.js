@@ -95,6 +95,10 @@ const userSchema = new mongoose.Schema(
                 ref: "Area",
             },
         ],
+        warning_count: {
+            type: Number,
+            default: 0,
+        },
     },
     { timestamps: true }
 );

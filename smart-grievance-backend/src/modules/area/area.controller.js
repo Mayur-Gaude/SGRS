@@ -1,3 +1,4 @@
+//area.controller.js
 import * as service from "./area.service.js";
 import { successResponse } from "../../utils/response.js";
 
@@ -50,3 +51,4 @@ export const deactivateArea = async (req, res, next) => {
         next(error);
     }
 };
+

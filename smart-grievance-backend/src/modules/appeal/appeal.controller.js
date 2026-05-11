@@ -45,3 +45,12 @@ export const reviewAppeal = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getAppeals = async (req, res, next) => {
+    try {
+        const result = await service.getAppeals();
+        return successResponse(res, result);
+    } catch (error) {
+        next(error);
+    }
+};

@@ -39,6 +39,11 @@ export const submitFeedback = async (
         comment,
     });
 
+    complaint.feedback_submitted = true;
+    complaint.status = "CLOSED"; // 🔥 CLOSE IT
+    await complaint.save();
+
+
     // Timeline entry
     await createTimelineEntry({
         complaint_id: complaint._id,

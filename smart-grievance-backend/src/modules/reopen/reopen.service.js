@@ -26,11 +26,24 @@ export const requestReopen = async (
         throw new Error("Reopen allowed only after resolution");
     }
 
+    const existing = await ReopenRequest.findOne({
+        complaint_id: complaintId,
+        status: "PENDING",
+    });
+
+    if (existing) {
+        throw new Error("Reopen request already pending");
+    }
+
     const reopen = await ReopenRequest.create({
         complaint_id: complaintId,
         user_id: currentUser._id,
         reason,
     });
+
+    // After creating reopen request    
+    complaint.status = "REOPEN_REQUESTED"; // 🔥 ADD THIS
+    await complaint.save();
 
     await createTimelineEntry({
         complaint_id: complaint._id,
@@ -103,4 +116,13 @@ export const reviewReopenRequest = async (
     }
 
     return reopen;
+};
+
+export const getReopenRequests = async (adminId) => {
+    return ReopenRequest.find({ status: "PENDING" })
+        .populate({
+            path: "complaint_id",
+            match: { assigned_admin_id: adminId },
+        })
+        .populate("user_id", "full_name");
 };

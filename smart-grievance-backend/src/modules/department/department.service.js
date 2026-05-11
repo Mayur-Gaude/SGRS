@@ -1,3 +1,4 @@
+//deparment.service.js
 import Department from "../../models/department.model.js";
 
 export const createDepartment = async (data, user) => {
@@ -35,6 +36,17 @@ export const deactivateDepartment = async (id) => {
     const dept = await Department.findByIdAndUpdate(
         id,
         { is_active: false },
+        { new: true }
+    );
+
+    if (!dept) throw new Error("Department not found");
+    return dept;
+};
+
+export const activateDepartment = async (id) => {
+    const dept = await Department.findByIdAndUpdate(
+        id,
+        { is_active: true },
         { new: true }
     );
 

@@ -40,7 +40,7 @@ const violationSchema = new mongoose.Schema({
 
     reported_by: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "DepartmentAdmin",
+        ref: "User",
     },
 
     detected_by_system: {

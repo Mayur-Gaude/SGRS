@@ -1,3 +1,4 @@
+// admin.controller.js
 import * as service from "./admin.service.js";
 import { successResponse } from "../../utils/response.js";
 
@@ -54,6 +55,30 @@ export const deactivateDepartmentAdmin = async (
                 req.params.id
             );
 
+        return successResponse(res, result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateDepartmentAdmin = async (req, res, next) => {
+    try {
+        const result = await service.updateDepartmentAdmin(
+            req.params.id,
+            req.body
+        );
+
+        return successResponse(res, result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getDepartmentAdminById = async (req, res, next) => {
+    try {
+        const result = await service.getDepartmentAdminById(
+            req.params.id
+        );
         return successResponse(res, result);
     } catch (error) {
         next(error);

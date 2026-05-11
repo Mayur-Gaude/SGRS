@@ -43,3 +43,12 @@ export const reviewReopen = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getReopens = async (req, res, next) => {
+    try {
+        const result = await service.getReopenRequests(req.user._id);
+        return successResponse(res, result);
+    } catch (error) {
+        next(error);
+    }
+};

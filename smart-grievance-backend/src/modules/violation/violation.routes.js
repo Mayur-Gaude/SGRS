@@ -13,4 +13,25 @@ router.post(
     controller.createViolation
 );
 
+router.get(
+    "/",
+    protect,
+    authorize("DEPT_ADMIN", "SUPER_ADMIN"),
+    controller.getViolations
+);
+
+router.get(
+    "/management",
+    protect,
+    authorize("SUPER_ADMIN"),
+    controller.getViolationManagement
+);
+
+router.get(
+    "/:id",
+    protect,
+    authorize("SUPER_ADMIN"),
+    controller.getViolationById
+);
+
 export default router;

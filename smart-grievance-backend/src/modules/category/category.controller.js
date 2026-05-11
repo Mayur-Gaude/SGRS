@@ -1,3 +1,4 @@
+//category.controller.js
 import * as service from "./category.service.js";
 import { successResponse } from "../../utils/response.js";
 
