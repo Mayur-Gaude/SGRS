@@ -13,7 +13,7 @@ import { calculateSLA } from "../../services/sla.service.js";
 import { evaluateSLA } from "../../services/sla.service.js";
 import { createUserNotification } from "../../services/notification.service.js";
 
-import { calculateComplaintRisk } from "../../services/complaintRisk.service.js";
+import { calculateComplaintRisk } from "../../services/ComplaintRisk.service.js";
 
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
