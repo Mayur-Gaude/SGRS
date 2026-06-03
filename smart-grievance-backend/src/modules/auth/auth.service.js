@@ -11,7 +11,7 @@ import { generateResetToken } from "../../services/resetToken.service.js";
 
 export const getMyProfile = async (currentUser) => {
     const user = await User.findById(currentUser._id)
-        .select("_id full_name email phone avatar_url role department_id area_ids email_verified phone_verified is_active createdAt")
+        .select("_id full_name email phone avatar_url account_status account_reason role department_id area_ids email_verified phone_verified is_active createdAt")
         .populate("department_id", "name code")
         .populate("area_ids", "name");
 
@@ -23,6 +23,8 @@ export const getMyProfile = async (currentUser) => {
         email: user.email,
         phone: user.phone,
         avatar_url: user.avatar_url,
+        account_status: user.account_status, // Add this
+        account_reason: user.account_reason,
         role: user.role,
         department: user.department_id || null,
         areas: user.area_ids || [],
@@ -72,6 +74,8 @@ export const updateMyProfile = async (currentUser, data) => {
         email: updated.email,
         phone: updated.phone,
         avatar_url: updated.avatar_url,
+        account_status: updated.account_status, // Add this
+        account_reason: updated.account_reason,
         role: updated.role,
         department: updated.department_id || null,
         areas: updated.area_ids || [],
@@ -105,8 +109,9 @@ export const uploadMyAvatar = async (currentUser, file) => {
         full_name: updated.full_name,
         email: updated.email,
         phone: updated.phone,
-        avatar_url: updated.avatar_url
-        ,
+        avatar_url: updated.avatar_url,
+        account_status: updated.account_status, 
+        account_reason: updated.account_reason,
         role: updated.role,
         department: updated.department_id || null,
         areas: updated.area_ids || [],

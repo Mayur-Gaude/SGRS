@@ -12,6 +12,7 @@ import { generateComplaintNumber } from "../../services/complaintNumber.service.
 import { calculateSLA } from "../../services/sla.service.js";
 import { evaluateSLA } from "../../services/sla.service.js";
 import { createUserNotification } from "../../services/notification.service.js";
+import { sendComplaintStatusUpdateEmail } from "../../services/email.service.js";
 
 import { calculateComplaintRisk } from "../../services/ComplaintRisk.service.js";
 
@@ -375,6 +376,25 @@ export const updateComplaintStatus = async (
         message: `Your complaint ${complaint.complaint_number} status was updated to ${status}.`,
         meta: { status },
     });
+
+    // Send email notification to user (non-blocking)
+    try {
+        const user = await User.findById(complaint.user_id);
+        if (user && user.email) {
+            await sendComplaintStatusUpdateEmail({
+                email: user.email,
+                full_name: user.full_name,
+                complaint_number: complaint.complaint_number,
+                status: status,
+                rejection_reason: rejection_reason,
+                department_name: complaint.department_id?.name || "N/A",
+                category_name: complaint.category_id?.name || "N/A",
+            });
+        }
+    } catch (emailError) {
+        console.error("Failed to send status update email:", emailError.message);
+        // Don't throw error - email failure shouldn't block status update
+    }
 
     return complaint;
 };
