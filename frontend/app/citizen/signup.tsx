@@ -50,7 +50,7 @@ export default function CitizenSignup() {
       Alert.alert('Success', 'Registration successful. Please verify OTP sent to your contact.');
       router.replace({
         pathname: '/citizen/verify-otp',
-        params: { user_id: userId, email: email.trim() },
+        params: { user_id: userId, email: email.trim(), phone: normalized },
       });
     } catch (e: any) {
       Alert.alert('Registration failed', e?.message || 'Unable to register');
