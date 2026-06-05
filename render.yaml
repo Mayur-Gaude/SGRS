@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: sgrss-backend
+    runtime: node
+    rootDir: SGRS/smart-grievance-backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: MAX_LOGIN_ATTEMPTS
+        value: 5
+      - key: LOCK_TIME_MINUTES
+        value: 15
+      - key: OTP_EXPIRE_MINUTES
+        value: 10
+      - key: OTP_RESEND_COOLDOWN_SECONDS
+        value: 60
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
