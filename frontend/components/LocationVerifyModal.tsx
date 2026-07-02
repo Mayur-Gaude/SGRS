@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -9,6 +8,7 @@ import { getComplaintMeta, submitComplaint, uploadComplaintMedia } from '../lib/
 import { useAuthStore } from '../store/authStore';
 import { isPointInPolygon, normalizePolygonFromGeoBoundary } from '../lib/geofence';
 import OsmInteractiveMap from './OsmInteractiveMap';
+import LightDropdownSelect from './LightDropdownSelect';
 
 interface Props {
   visible: boolean;
@@ -418,50 +418,55 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
                     <ActivityIndicator color="#2563eb" />
                   </View>
                 ) : (
-                  <View className="border border-slate-300 rounded-xl mb-3">
-                    <Picker selectedValue={departmentId} onValueChange={(v: string) => setDepartmentId(v)}>
-                      <Picker.Item label="Select Department" value="" />
-                      {activeDepartments.map((d) => (
-                        <Picker.Item key={getId(d)} label={d.name || 'Unnamed Department'} value={getId(d)} />
-                      ))}
-                    </Picker>
-                  </View>
+                  <LightDropdownSelect
+                    placeholder="Select Department"
+                    value={departmentId}
+                    onChange={setDepartmentId}
+                    options={activeDepartments.map((d) => ({
+                      label: d.name || 'Unnamed Department',
+                      value: getId(d),
+                    }))}
+                  />
                 )}
 
-                <View className="border border-slate-300 rounded-xl mb-3">
-                  <Picker enabled={!!departmentId} selectedValue={areaId} onValueChange={(v: string) => setAreaId(v)}>
-                    <Picker.Item label={departmentId ? 'Select Area' : 'Select Department First'} value="" />
-                    {filteredAreas.map((a) => (
-                      <Picker.Item key={getId(a)} label={a.name || 'Unnamed Area'} value={getId(a)} />
-                    ))}
-                  </Picker>
-                </View>
+                <LightDropdownSelect
+                  placeholder={departmentId ? 'Select Area' : 'Select Department First'}
+                  value={areaId}
+                  onChange={setAreaId}
+                  disabled={!departmentId}
+                  options={filteredAreas.map((a) => ({
+                    label: a.name || 'Unnamed Area',
+                    value: getId(a),
+                  }))}
+                />
 
-                <View className="border border-slate-300 rounded-xl mb-3">
-                  <Picker
-                    enabled={!!departmentId}
-                    selectedValue={categoryId}
-                    onValueChange={(v: string) => setCategoryId(v)}
-                  >
-                    <Picker.Item label={departmentId ? 'Select Category' : 'Select Department First'} value="" />
-                    {filteredCategories.map((c) => (
-                      <Picker.Item key={getId(c)} label={c.name || 'Unnamed Category'} value={getId(c)} />
-                    ))}
-                  </Picker>
-                </View>
+                <LightDropdownSelect
+                  placeholder={departmentId ? 'Select Category' : 'Select Department First'}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  disabled={!departmentId}
+                  options={filteredCategories.map((c) => ({
+                    label: c.name || 'Unnamed Category',
+                    value: getId(c),
+                  }))}
+                />
 
                 <TextInput
                   placeholder="Complaint Title"
+                  placeholderTextColor="#64748b"
                   value={title}
                   onChangeText={setTitle}
+                  style={{ color: '#0f172a' }}
                   className="border border-slate-300 rounded-xl px-3 py-2 mb-3"
                 />
 
                 <TextInput
                   placeholder="Describe your issue..."
+                  placeholderTextColor="#64748b"
                   value={description}
                   onChangeText={setDescription}
                   multiline
+                  style={{ color: '#0f172a' }}
                   className="border border-slate-300 rounded-xl px-3 py-2 mb-4"
                 />
 
@@ -558,15 +563,19 @@ export default function LocationVerifyModal({ visible, onClose, onVerify }: Prop
 
                 <TextInput
                   placeholder="Detected Location"
+                  placeholderTextColor="#64748b"
                   value={location}
                   onChangeText={setLocation}
+                  style={{ color: '#0f172a' }}
                   className="border border-slate-300 rounded-xl px-3 py-2 mb-3"
                 />
 
                 <TextInput
                   placeholder="Nearby Landmark (optional)"
+                  placeholderTextColor="#64748b"
                   value={landmark}
                   onChangeText={setLandmark}
+                  style={{ color: '#0f172a' }}
                   className="border border-slate-300 rounded-xl px-3 py-2 mb-4"
                 />
 

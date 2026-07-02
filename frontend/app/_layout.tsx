@@ -51,39 +51,19 @@ export default function RootLayout() {
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
+          name="citizen/notifications" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="citizen/banned" 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
           name="citizen/forgot-password" 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
           name="citizen/verify-otp" 
-          options={{ headerShown: false }} 
-        />
-         <Stack.Screen 
-          name="admin/index" 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="admin/dashboard" 
-          options={{ headerShown: false }} 
-        />
-         <Stack.Screen 
-          name="super-admin/index" 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="super-admin/dashboard" 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="super-admin/departments" 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="super-admin/admins" 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="super-admin/appeals" 
           options={{ headerShown: false }} 
         />
       </Stack>

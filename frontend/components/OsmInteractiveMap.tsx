@@ -130,6 +130,7 @@ export default function OsmInteractiveMap({
       <WebView
         originWhitelist={['*']}
         source={{ html }}
+        androidLayerType="software"
         javaScriptEnabled
         domStorageEnabled
         setSupportMultipleWindows={false}

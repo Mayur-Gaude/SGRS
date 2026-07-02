@@ -4,11 +4,15 @@ import React, { useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { register as registerApi } from '../../lib/auth';
@@ -22,6 +26,8 @@ export default function CitizenSignup() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
@@ -50,10 +56,17 @@ export default function CitizenSignup() {
       Alert.alert('Success', 'Registration successful. Please verify OTP sent to your contact.');
       router.replace({
         pathname: '/citizen/verify-otp',
-        params: { user_id: userId, email: email.trim() },
+        params: { user_id: userId, email: email.trim(), phone: normalized },
       });
     } catch (e: any) {
       Alert.alert('Registration failed', e?.message || 'Unable to register');
+       console.log("REGISTER ERROR:", {
+      message: e?.message,
+      code: e?.code,
+      status: e?.response?.status,
+      statusText: e?.response?.statusText,
+      response: e?.response?.data,
+    });
     } finally {
       setLoading(false);
     }
@@ -61,7 +74,15 @@ export default function CitizenSignup() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1d4ed8' }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={20}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <View style={{ alignItems: 'center', paddingTop: 80, paddingHorizontal: 16, paddingBottom: 40 }}>
           {/* Header */}
           <View style={{ alignItems: 'center', marginBottom: 40 }}>
@@ -76,75 +97,149 @@ export default function CitizenSignup() {
 
           {/* Sign Up Box */}
           <View style={{ backgroundColor: 'white', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400 }}>
-            <TextInput
-              placeholder="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
+            <View
               style={{
+                flexDirection: 'row',
+                alignItems: 'center',
                 borderWidth: 1,
                 borderColor: '#e2e8f0',
                 borderRadius: 8,
-                padding: 14,
+                paddingHorizontal: 14,
                 marginBottom: 16,
               }}
-            />
+            >
+              <Feather name="user" size={18} color="#64748b" />
+              <TextInput
+                placeholder="Full Name"
+                placeholderTextColor="#64748b"
+                value={fullName}
+                onChangeText={setFullName}
+                style={{
+                  flex: 1,
+                  color: '#0f172a',
+                  paddingVertical: 14,
+                  paddingLeft: 10,
+                }}
+              />
+            </View>
 
-            <TextInput
-              placeholder="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <View
               style={{
+                flexDirection: 'row',
+                alignItems: 'center',
                 borderWidth: 1,
                 borderColor: '#e2e8f0',
                 borderRadius: 8,
-                padding: 14,
+                paddingHorizontal: 14,
                 marginBottom: 16,
               }}
-            />
+            >
+              <Feather name="mail" size={18} color="#64748b" />
+              <TextInput
+                placeholder="Email Address"
+                placeholderTextColor="#64748b"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={{
+                  flex: 1,
+                  color: '#0f172a',
+                  paddingVertical: 14,
+                  paddingLeft: 10,
+                }}
+              />
+            </View>
 
-            <TextInput
-              placeholder="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
+            <View
               style={{
+                flexDirection: 'row',
+                alignItems: 'center',
                 borderWidth: 1,
                 borderColor: '#e2e8f0',
                 borderRadius: 8,
-                padding: 14,
+                paddingHorizontal: 14,
                 marginBottom: 16,
               }}
-            />
+            >
+              <Feather name="phone" size={18} color="#64748b" />
+              <TextInput
+                placeholder="Phone Number"
+                placeholderTextColor="#64748b"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                style={{
+                  flex: 1,
+                  color: '#0f172a',
+                  paddingVertical: 14,
+                  paddingLeft: 10,
+                }}
+              />
+            </View>
 
-            <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
+            <View
               style={{
                 borderWidth: 1,
                 borderColor: '#e2e8f0',
                 borderRadius: 8,
-                padding: 14,
                 marginBottom: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 14,
               }}
-            />
+            >
+              <Feather name="lock" size={18} color="#64748b" />
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor="#64748b"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                  color: '#0f172a',
+                  paddingVertical: 14,
+                  paddingLeft: 10,
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)} style={{ paddingLeft: 8, paddingVertical: 4 }}>
+                <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
 
-            <TextInput
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
+            <View
               style={{
                 borderWidth: 1,
                 borderColor: '#e2e8f0',
                 borderRadius: 8,
-                padding: 14,
                 marginBottom: 20,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 14,
               }}
-            />
+            >
+              <Feather name="lock" size={18} color="#64748b" />
+              <TextInput
+                placeholder="Confirm Password"
+                placeholderTextColor="#64748b"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                style={{
+                  flex: 1,
+                  color: '#0f172a',
+                  paddingVertical: 14,
+                  paddingLeft: 10,
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword((prev) => !prev)}
+                style={{ paddingLeft: 8, paddingVertical: 4 }}
+              >
+                <Feather name={showConfirmPassword ? 'eye-off' : 'eye'} size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
 
             {/* Create Account Button */}
             <TouchableOpacity
@@ -171,7 +266,7 @@ export default function CitizenSignup() {
             {/* Back to Sign In */}
             <TouchableOpacity
               style={{ paddingVertical: 12, alignItems: 'center' }}
-              onPress={() => router.replace('/citizen/index')}
+              onPress={() => router.replace('/citizen')}
             >
               <Text style={{ color: '#1d4ed8', fontSize: 14, fontWeight: 'bold' }}>
                 Already have an account? Sign In
@@ -180,6 +275,8 @@ export default function CitizenSignup() {
           </View>
         </View>
       </ScrollView>
+      </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

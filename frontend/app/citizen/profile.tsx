@@ -17,7 +17,9 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import AppBar from '../../components/AppBar';
-import { getComplaints, getMyProfile, updateMyProfile } from '../../lib/api';
+import BanHistoryModal from '../../components/BanHistoryModal';
+import { getComplaints, getMyProfile, updateMyProfile, uploadMyAvatar, getMyBan } from '../../lib/api';
+import { resolveMediaUrl } from '../../lib/media';
 import { useAuthStore } from '../../store/authStore';
 
 type ProfileData = {
@@ -29,6 +31,8 @@ type ProfileData = {
   role?: string;
   is_active?: boolean;
   createdAt?: string;
+  account_status?: 'ACTIVE' | 'BANNED' | 'SUSPENDED';
+  account_reason?: string;
 };
 
 type Complaint = {
@@ -42,38 +46,134 @@ const normalizeList = <T,>(res: any): T[] => {
   return [];
 };
 
+const toSafeAvatarUri = (raw?: string) => {
+  if (!raw) return '';
+  // Large data URLs can crash some Android native image paths.
+  if (raw.startsWith('data:') && raw.length > 200000) return '';
+  return resolveMediaUrl(raw);
+};
+
+const isLocalFileUri = (uri?: string) => !!uri && (/^file:\/\//i.test(uri) || /^content:\/\//i.test(uri));
+
+const guessImageMeta = (uri: string) => {
+  const clean = uri.split('?')[0];
+  const fileName = clean.split('/').pop() || 'profile-photo.jpg';
+  const lower = fileName.toLowerCase();
+
+  if (lower.endsWith('.png')) return { fileName, fileType: 'image/png' };
+  if (lower.endsWith('.webp')) return { fileName, fileType: 'image/webp' };
+  if (lower.endsWith('.heic')) return { fileName, fileType: 'image/heic' };
+  return { fileName, fileType: 'image/jpeg' };
+};
+
 export default function ProfilePage() {
   const authToken = useAuthStore((state) => state.token) || undefined;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [ban, setBan] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showBanModal, setShowBanModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
 
+  const isBanned = profile?.account_status === 'BANNED';
+
+  console.log("PROFILE DATA:", profile);
+  console.log("ACCOUNT STATUS:", profile?.account_status);
+  console.log("IS BANNED:", isBanned);
+
   const loadProfileData = useCallback(async () => {
     if (!authToken) {
+      console.log("NO AUTH TOKEN");
       setProfile(null);
       setComplaints([]);
+      setBan(null);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      const [profileRes, complaintsRes] = await Promise.all([
-        getMyProfile(authToken),
-        getComplaints(authToken),
-      ]);
-
+      // First fetch profile
+      console.log("FETCHING PROFILE WITH TOKEN:", authToken?.substring(0, 10) + "...");
+      const profileRes = await getMyProfile(authToken);
+      console.log("PROFILE RES:", JSON.stringify(profileRes, null, 2));
       const profilePayload = profileRes?.data || profileRes;
+      console.log("PROFILE PAYLOAD:", JSON.stringify(profilePayload, null, 2));
+      console.log("ACCOUNT_STATUS FROM PAYLOAD:", profilePayload?.account_status);
       setProfile(profilePayload || null);
-      setComplaints(normalizeList<Complaint>(complaintsRes));
-    } catch {
-      setProfile(null);
-      setComplaints([]);
+
+      // If banned, skip complaints fetch and fetch ban details instead
+      if (profilePayload?.account_status === 'BANNED') {
+        console.log("USER IS BANNED - FETCHING BAN DETAILS");
+        setComplaints([]); // Clear complaints for banned user
+        
+        // Fetch ban details for banned user
+        try {
+          const banRes = await getMyBan(authToken);
+          console.log("BAN RES:", JSON.stringify(banRes, null, 2));
+          if (banRes) {
+            if (banRes?.data?.status === 'ACTIVE') {
+              setBan(banRes.data.ban);
+            } else if (banRes?.status === 'ACTIVE') {
+              setBan(banRes.ban);
+            } else if (banRes?.ban) {
+              setBan(banRes.ban);
+            }
+          }
+        } catch (e: any) {
+          console.log("BAN FETCH ERROR:", e?.message);
+          // Ban fetch failed, that's ok
+          setBan(null);
+        }
+      } else {
+        console.log("USER IS ACTIVE - FETCHING COMPLAINTS");
+        // Active user - fetch complaints normally
+        try {
+          const complaintsRes = await getComplaints(authToken);
+          setComplaints(normalizeList<Complaint>(complaintsRes));
+        } catch (e: any) {
+          console.log("COMPLAINTS FETCH ERROR:", e?.message);
+          setComplaints([]);
+        }
+      }
+    } catch (e: any) {
+      console.log("PROFILE LOAD ERROR:", e?.message || e);
+      
+      // Check if error is "Account banned"
+      if (e?.message?.includes('banned')) {
+        console.log("BACKEND SAYS USER IS BANNED - SETTING PROFILE WITH BAN STATUS");
+        // Create a minimal profile with ban status
+        setProfile({
+          account_status: 'BANNED',
+          account_reason: e.message
+        } as ProfileData);
+        setComplaints([]);
+        
+        // Try to fetch ban details
+        try {
+          const banRes = await getMyBan(authToken);
+          console.log("BAN RES:", JSON.stringify(banRes, null, 2));
+          if (banRes) {
+            if (banRes?.data?.status === 'ACTIVE') {
+              setBan(banRes.data.ban);
+            } else if (banRes?.status === 'ACTIVE') {
+              setBan(banRes.ban);
+            } else if (banRes?.ban) {
+              setBan(banRes.ban);
+            }
+          }
+        } catch (banError: any) {
+          console.log("BAN FETCH ERROR:", banError?.message);
+          setBan(null);
+        }
+      } else {
+        setProfile(null);
+        setComplaints([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -97,7 +197,7 @@ export default function ProfilePage() {
     return new Date(profile.createdAt).getFullYear().toString();
   }, [profile?.createdAt]);
 
-  const avatarUri = profile?.avatar_url || 'https://i.pravatar.cc/150';
+  const avatarUri = toSafeAvatarUri(profile?.avatar_url) || 'https://i.pravatar.cc/150';
 
   const openEditModal = () => {
     setEditName(profile?.full_name || '');
@@ -119,12 +219,19 @@ export default function ProfilePage() {
     });
 
     if (!result.canceled && result.assets?.length) {
-      setEditAvatarUrl(result.assets[0].uri);
+      const asset = result.assets[0];
+      setEditAvatarUrl(asset.uri || '');
     }
   };
 
   const handleSaveProfile = async () => {
     if (!authToken) return;
+    
+    if (isBanned) {
+      Alert.alert('Cannot Update', 'You cannot update your profile while your account is banned.');
+      return;
+    }
+
     if (!editName.trim()) {
       Alert.alert('Invalid name', 'Name is required.');
       return;
@@ -136,19 +243,41 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
+      const currentProfileSnapshot = profile;
+      let nextAvatar = editAvatarUrl.trim();
+      let uploadedAvatarProfile: ProfileData | null = null;
+
+      if (isLocalFileUri(nextAvatar)) {
+        const { fileName, fileType } = guessImageMeta(nextAvatar);
+        const uploadRes = await uploadMyAvatar(nextAvatar, authToken, fileName, fileType);
+        const uploadPayload = uploadRes?.data || uploadRes;
+        nextAvatar = uploadPayload?.avatar_url || '';
+        uploadedAvatarProfile = uploadPayload || null;
+      }
+
       const res = await updateMyProfile(
         {
           full_name: editName.trim(),
           phone: editPhone.trim(),
-          avatar_url: editAvatarUrl.trim() || null,
+          avatar_url: nextAvatar || null,
         },
         authToken
       );
 
       const payload = res?.data || res;
-      setProfile(payload || null);
+      const mergedProfile = {
+        ...(currentProfileSnapshot || {}),
+        ...(payload || {}),
+        ...(uploadedAvatarProfile || {}),
+      } as ProfileData;
+
+      if (nextAvatar) {
+        mergedProfile.avatar_url = nextAvatar;
+      }
+
+      setProfile(mergedProfile);
+      await loadProfileData();
       setShowEditModal(false);
-      Alert.alert('Success', 'Profile updated successfully.');
     } catch (e: any) {
       Alert.alert('Update failed', e?.message || 'Unable to update profile.');
     } finally {
@@ -184,10 +313,12 @@ export default function ProfilePage() {
               className="w-24 h-24 rounded-xl"
             />
 
-            {/* Camera Icon */}
-            <TouchableOpacity className="absolute bottom-1 right-1 bg-blue-600 p-2 rounded-full" onPress={openEditModal}>
-              <Feather name="camera" size={14} color="white" />
-            </TouchableOpacity>
+            {/* Camera Icon - Disabled if banned */}
+            {!isBanned && (
+              <TouchableOpacity className="absolute bottom-1 right-1 bg-blue-600 p-2 rounded-full" onPress={openEditModal}>
+                <Feather name="camera" size={14} color="white" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Name */}
@@ -218,9 +349,11 @@ export default function ProfilePage() {
               Personal Information
             </Text>
 
-            <TouchableOpacity onPress={openEditModal}>
-              <Feather name="edit-2" size={18} color="#2563eb" />
-            </TouchableOpacity>
+            {!isBanned && (
+              <TouchableOpacity onPress={openEditModal}>
+                <Feather name="edit-2" size={18} color="#2563eb" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Info Items */}
@@ -274,42 +407,78 @@ export default function ProfilePage() {
           </View>
         </View>
 
-        {/* ===== ACCOUNT HEALTH BOX ===== */}
-        <View className="bg-green-50 rounded-2xl p-4 mb-4 border border-green-200">
-
-          <Text className="text-green-800 font-bold mb-2">
-            Account in Good Standing
-          </Text>
-          <Text className="text-green-800 font-semibold mb-2 ">
-            No violation detected.Keep up the good work!
-          </Text>
-
-          {/* Score Bar */}
-          <View className="w-full h-2 bg-green-200 rounded-full overflow-hidden">
-            <View className="h-2 bg-green-600 w-[80%]" />
+        {/* ===== ACCOUNT STATUS BOX ===== */}
+        {isBanned ? (
+          <View className="bg-red-50 rounded-2xl p-4 mb-4 border border-red-300">
+            <Text className="text-red-800 font-bold mb-2">
+              Account Banned
+            </Text>
+            <Text className="text-red-800 font-semibold mb-2">
+              {profile?.account_reason || 'Your account has been banned. Please review the ban details for more information.'}
+            </Text>
+            {/* Score Bar */}
+            <View className="w-full h-2 bg-red-200 rounded-full overflow-hidden">
+              <View className="h-2 bg-red-600 w-[100%]" />
+            </View>
+            <Text className="text-red-700 text-xs mt-1">
+              Status: Banned
+            </Text>
           </View>
+        ) : (
+          <View className="bg-green-50 rounded-2xl p-4 mb-4 border border-green-200">
+            <Text className="text-green-800 font-bold mb-2">
+              Account in Good Standing
+            </Text>
+            <Text className="text-green-800 font-semibold mb-2 ">
+              No violation detected.Keep up the good work!
+            </Text>
 
-          <Text className="text-green-700 text-xs mt-1">
-            Trust Score: 80%
-          </Text>
+            {/* Score Bar */}
+            <View className="w-full h-2 bg-green-200 rounded-full overflow-hidden">
+              <View className="h-2 bg-green-600 w-[80%]" />
+            </View>
 
-        </View>
+            <Text className="text-green-700 text-xs mt-1">
+              Trust Score: 80%
+            </Text>
+          </View>
+        )}
 
-        {/* ===== VIEW BAN HISTORY BUTTON ===== */}
-        <TouchableOpacity className="bg-white border border-red-300 py-3 rounded-xl mb-3">
-          <Text className="text-red-600 text-center font-semibold">
-            View Ban History
-          </Text>
-        </TouchableOpacity>
+        {/* ===== VIEW BAN HISTORY BUTTON (if banned) ===== */}
+        {isBanned && (
+          <TouchableOpacity 
+            className="bg-red-600 py-3 rounded-xl mb-3" 
+            onPress={() => setShowBanModal(true)}
+          >
+            <Text className="text-white text-center font-semibold">
+              View Ban History & Appeal
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* ===== UPDATE DETAILS BUTTON ===== */}
-        <TouchableOpacity className="bg-blue-600 py-4 rounded-xl" onPress={openEditModal}>
-          <Text className="text-white text-center font-semibold text-lg">
-            Update Details
+        <TouchableOpacity 
+          className={`${isBanned ? 'bg-slate-300' : 'bg-blue-600'} py-4 rounded-xl`} 
+          disabled={isBanned}
+          onPress={openEditModal}
+        >
+          <Text className={`${isBanned ? 'text-slate-600' : 'text-white'} text-center font-semibold text-lg`}>
+            {isBanned ? 'Cannot Update (Banned)' : 'Update Details'}
           </Text>
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* ===== BAN HISTORY MODAL ===== */}
+      <BanHistoryModal 
+        visible={showBanModal} 
+        onClose={() => setShowBanModal(false)}
+        ban={ban}
+        onAppealSubmitted={() => {
+          setShowBanModal(false);
+          loadProfileData();
+        }}
+      />
 
       <Modal visible={showEditModal} transparent animationType="fade" onRequestClose={() => setShowEditModal(false)}>
         <KeyboardAvoidingView

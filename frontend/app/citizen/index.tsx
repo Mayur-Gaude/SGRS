@@ -21,8 +21,10 @@ export default function CitizenPortal() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const setToken = useAuthStore((state) => state.setToken);
+  const setUser = useAuthStore((state) => state.setUser);
 
   // const onLogin = async () => {
   //   // Validation
@@ -76,45 +78,69 @@ export default function CitizenPortal() {
   // };
 
   const onLogin = async () => {
-  if (!email || !password) {
-    Alert.alert('Missing fields', 'Enter email and password');
-    return;
-  }
+    if (!email || !password) {
+      Alert.alert('Missing fields', 'Enter email and password');
+      return;
+    }
 
-  if (!isValidEmail(email)) {
-    Alert.alert('Invalid email', 'Enter valid email');
-    return;
-  }
+    if (!isValidEmail(email)) {
+      Alert.alert('Invalid email', 'Enter valid email');
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const payload = {
-      email: email.trim().toLowerCase(),  // ✅ IMPORTANT
-      password,
-    };
+    try {
+      const payload = {
+        email: email.trim().toLowerCase(),
+        password,
+      };
 
-    console.log("LOGIN PAYLOAD:", payload);
+      console.log("LOGIN PAYLOAD:", payload);
 
-    const res = await loginApi(payload);
-    // Save token to Zustand
-    const token = res.data?.token || res.data?.accessToken || res.token || res.accessToken;
-    if (token) setToken(token);
-    console.log("LOGIN SUCCESS:", res);
-    Alert.alert("Success", "Login successful!");
-    router.replace('/citizen/dashboard');
+      const res = await loginApi(payload);
+      const token = res.data?.token || res.data?.accessToken || res.token || res.accessToken;
+      if (token) setToken(token);
+      
+      console.log("LOGIN SUCCESS:", res);
 
-  } catch (e: any) {
-    console.log("LOGIN ERROR:", e?.response?.data || e.message);
+      // Fetch user profile to check ban status
+      const { getMyProfile } = await import('../../lib/api');
+      
+      try {
+        const profileRes = await getMyProfile(token);
+        const profile = profileRes?.data || profileRes;
+        console.log("PROFILE FETCHED:", profile);
+        console.log("ACCOUNT STATUS:", profile?.account_status);
+        setUser(profile);
 
-    Alert.alert(
-      'Login failed',
-      e?.response?.data?.message || e?.message || 'User not found'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+        // Redirect based on account status
+        if (profile?.account_status === 'BANNED') {
+          // Banned user → Go to profile to see ban details
+          console.log("REDIRECTING BANNED USER TO PROFILE");
+          router.replace('/citizen/profile');
+        } else {
+          // Active user → Go straight to dashboard
+          console.log("REDIRECTING ACTIVE USER TO DASHBOARD");
+          router.replace('/citizen/dashboard');
+        }
+      } catch (profileError: any) {
+        console.log("PROFILE FETCH ERROR:", profileError?.message);
+        // If profile fetch fails, default to dashboard
+        router.replace('/citizen/dashboard');
+      }
+
+    } catch (e: any) {
+      console.log("LOGIN ERROR:", e?.response?.data || e.message);
+
+      Alert.alert(
+        'Login failed',
+        e?.response?.data?.message || e?.message || 'User not found'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1d4ed8' }}>
@@ -176,50 +202,92 @@ export default function CitizenPortal() {
 
             {/* Email or Phone Input */}
             {signInMethod === 'email' ? (
-              <TextInput
-                placeholder="Email Address"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
+              <View
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   borderWidth: 1,
                   borderColor: '#e2e8f0',
                   borderRadius: 8,
-                  padding: 14,
-                  marginBottom: 16
+                  paddingHorizontal: 14,
+                  marginBottom: 16,
                 }}
-              />
+              >
+                <Feather name="mail" size={18} color="#64748b" />
+                <TextInput
+                  placeholder="Email Address"
+                  placeholderTextColor="#64748b"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={{
+                    flex: 1,
+                    color: '#0f172a',
+                    paddingVertical: 14,
+                    paddingLeft: 10,
+                  }}
+                />
+              </View>
             ) : (
-              <TextInput
-                placeholder="Phone Number"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
+              <View
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   borderWidth: 1,
                   borderColor: '#e2e8f0',
                   borderRadius: 8,
-                  padding: 14,
-                  marginBottom: 16
+                  paddingHorizontal: 14,
+                  marginBottom: 16,
                 }}
-              />
+              >
+                <Feather name="phone" size={18} color="#64748b" />
+                <TextInput
+                  placeholder="Phone Number"
+                  placeholderTextColor="#64748b"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  style={{
+                    flex: 1,
+                    color: '#0f172a',
+                    paddingVertical: 14,
+                    paddingLeft: 10,
+                  }}
+                />
+              </View>
             )}
 
             {/* Password */}
-            <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
+            <View
               style={{
                 borderWidth: 1,
                 borderColor: '#e2e8f0',
                 borderRadius: 8,
-                padding: 14,
-                marginBottom: 20
+                marginBottom: 20,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 14,
               }}
-            />
+            >
+              <Feather name="lock" size={18} color="#64748b" />
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor="#64748b"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                  color: '#0f172a',
+                  paddingVertical: 14,
+                  paddingLeft: 10,
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)} style={{ paddingLeft: 8, paddingVertical: 4 }}>
+                <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color="#64748b" />
+              </TouchableOpacity>
+            </View>
 
             {/* Login Button */}
             <TouchableOpacity

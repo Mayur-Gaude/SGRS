@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sgrss",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -28,7 +28,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.mayank1007gshshs.sgrss"
+      "package": "com.umaxdessai.sgrss"
     },
     "web": {
       "output": "static",
@@ -63,15 +63,16 @@
       ]
     ],
     "extra": {
-      "apiUrl": "https://sgrs-w6tg.onrender.com",
+      "apiUrl": "https://merged-branch-j3yy.onrender.com",
       "router": {},
       "eas": {
-        "projectId": "5dd07146-f794-4782-aea7-9604b9d6b3a4"
+        "projectId": "bc27b003-110d-4af9-85ea-6e3517ee8765"
       }
     },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": false
-    }
+    },
+    "owner": "umaxdessai"
   }
 }

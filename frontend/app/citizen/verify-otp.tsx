@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { verifyOtp } from '../../lib/auth';
 
@@ -8,8 +8,10 @@ export default function CitizenOtpVerify() {
   const params = useLocalSearchParams();
   const user_id = Array.isArray(params.user_id) ? params.user_id[0] : params.user_id;
   const email = Array.isArray(params.email) ? params.email[0] : params.email;
+  const phone = Array.isArray(params.phone) ? params.phone[0] : params.phone;
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpType, setOtpType] = useState<'EMAIL_VERIFICATION' | 'PHONE_VERIFICATION'>('EMAIL_VERIFICATION');
 
   const handleVerify = async () => {
     if (!otp || otp.length !== 6) {
@@ -18,8 +20,15 @@ export default function CitizenOtpVerify() {
     }
     setLoading(true);
     try {
-      await verifyOtp({ user_id, otp_code: otp, otp_type: 'EMAIL_VERIFICATION' });
-      Alert.alert('Success', 'Account verified!', [
+      await verifyOtp({ user_id, otp_code: otp, otp_type: otpType });
+      if (otpType === 'EMAIL_VERIFICATION') {
+        setOtp('');
+        setOtpType('PHONE_VERIFICATION');
+        Alert.alert('Success', 'Email verified. Now verify the phone OTP.');
+        return;
+      }
+
+      Alert.alert('Success', 'Phone verified! Account setup is complete.', [
         { text: 'OK', onPress: () => router.replace({ pathname: '/citizen/dashboard' }) },
       ]);
     } catch (err: any) {
@@ -32,7 +41,25 @@ export default function CitizenOtpVerify() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f1f5f9', padding: 24 }}>
       <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 16 }}>Verify Your Account</Text>
-      <Text style={{ marginBottom: 24 }}>Enter the OTP sent to {email}</Text>
+      <Text style={{ marginBottom: 24 }}>
+        {otpType === 'EMAIL_VERIFICATION'
+          ? `Enter the OTP sent to ${email}`
+          : `Enter the OTP sent to ${phone}`}
+      </Text>
+      <View
+        style={{
+          backgroundColor: '#dbeafe',
+          borderColor: '#93c5fd',
+          borderWidth: 1,
+          borderRadius: 8,
+          padding: 12,
+          marginBottom: 16,
+        }}
+      >
+        <Text style={{ color: '#1e3a8a', fontWeight: '600' }}>
+          Step 1: Verify email first, then the phone OTP will open automatically.
+        </Text>
+      </View>
       <TextInput
         placeholder="Enter 6-digit OTP"
         value={otp}

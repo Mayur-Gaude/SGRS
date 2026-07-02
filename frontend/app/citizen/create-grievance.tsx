@@ -11,10 +11,11 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import AppBar from '../../components/AppBar';
 import ComplaintDetailsModal from '../../components/ComplaintDetailsModal';
-import { getComplaintMedia, getComplaints } from '../../lib/api';
+import { getComplaintMedia, getComplaints, getMyProfile } from '../../lib/api';
 import { useAuthStore } from '../../store/authStore';
 import Constants from 'expo-constants';
 
@@ -50,6 +51,7 @@ const normalizeList = <T,>(res: any): T[] => {
 
 export default function MyGrievances() {
   const authToken = useAuthStore((state) => state.token) || undefined;
+  const router = useRouter();
 
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [search, setSearch] = useState('');
@@ -66,15 +68,48 @@ export default function MyGrievances() {
 
     setLoadingComplaints(true);
     try {
+      // First check if user is banned
+      const profileRes = await getMyProfile(authToken);
+      const profile = profileRes?.data || profileRes;
+      
+      if (profile?.account_status === 'BANNED') {
+        Alert.alert(
+          'Account Banned',
+          'Your account has been banned. You can view ban details and submit an appeal on your profile page.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/citizen/profile'),
+            },
+          ]
+        );
+        return;
+      }
+
       const complaintsRes = await getComplaints(authToken);
       setComplaints(normalizeList<Complaint>(complaintsRes));
     } catch (e: any) {
-      Alert.alert('Unable to load grievances', e?.message || 'Could not fetch complaint list.');
+      // Check if it's a ban error
+      if (e?.message?.includes('banned')) {
+        Alert.alert(
+          'Account Banned',
+          'Your account has been banned. You can view ban details and submit an appeal on your profile page.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/citizen/profile'),
+            },
+          ]
+        );
+      } else {
+        // Only show alert if it's not a ban-related error
+        Alert.alert('Unable to load grievances', e?.message || 'Could not fetch complaint list.');
+      }
       setComplaints([]);
     } finally {
       setLoadingComplaints(false);
     }
-  }, [authToken]);
+  }, [authToken, router]);
 
   const getComplaintId = (c: Complaint): string => {
     const value: any = c._id || c.id;
@@ -88,10 +123,17 @@ export default function MyGrievances() {
 
   const getMediaUrl = (rawUrl?: string) => {
     if (!rawUrl) return '';
-    if (rawUrl.startsWith('http')) return rawUrl;
-    const normalized = rawUrl.replace(/\\/g, '/').replace(/^\/+/, '');
+    if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith('data:') || rawUrl.startsWith('file:')) {
+      return rawUrl;
+    }
+    let normalized = rawUrl.replace(/\\/g, '/').replace(/^\/+/, '');
+    const uploadsPos = normalized.toLowerCase().indexOf('uploads/');
+    if (uploadsPos >= 0) {
+      normalized = normalized.slice(uploadsPos);
+    }
+    const encoded = encodeURI(normalized);
     const base = getApiBaseUrl();
-    return base ? `${base}/${normalized}` : normalized;
+    return base ? `${base}/${encoded}` : encoded;
   };
 
   const openComplaintDetails = async (complaint: Complaint) => {
@@ -216,6 +258,7 @@ export default function MyGrievances() {
         loadingMedia={loadingMedia}
         onClose={() => setSelectedComplaint(null)}
         resolveMediaUrl={getMediaUrl}
+        onComplaintUpdated={loadComplaints}
       />
     </SafeAreaView>
   );

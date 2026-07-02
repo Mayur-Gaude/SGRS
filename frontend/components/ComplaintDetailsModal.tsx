@@ -1,6 +1,9 @@
-import React from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { resolveMediaUrl as resolveMediaUrlHelper } from '../lib/media';
+import { requestReopen, submitFeedback } from '../lib/api';
+import { useAuthStore } from '../store/authStore';
 
 type IdRef = string | { _id?: string; id?: string; name?: string };
 
@@ -32,6 +35,7 @@ interface ComplaintDetailsModalProps {
   loadingMedia: boolean;
   onClose: () => void;
   resolveMediaUrl: (rawUrl?: string) => string;
+  onComplaintUpdated?: () => void;
 }
 
 const getName = (value: any): string => {
@@ -47,7 +51,71 @@ export default function ComplaintDetailsModal({
   loadingMedia,
   onClose,
   resolveMediaUrl,
+  onComplaintUpdated,
 }: ComplaintDetailsModalProps) {
+  const authToken = useAuthStore((state) => state.token) || undefined;
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [reopenReason, setReopenReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const isResolved = (complaint?.status || '').toUpperCase() === 'RESOLVED';
+
+  const handleFeedback = async () => {
+    if (feedbackRating === 0) {
+      Alert.alert('Rating Required', 'Please select a rating');
+      return;
+    }
+
+    if (!complaint?._id && !complaint?.id) {
+      Alert.alert('Error', 'Complaint ID not found');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const complaintId = complaint._id || complaint.id;
+      await submitFeedback(complaintId as string, feedbackRating, feedbackComment, authToken);
+      Alert.alert('Success', 'Feedback submitted successfully');
+      setFeedbackComment('');
+      setFeedbackRating(0);
+      setShowFeedbackModal(false);
+      onComplaintUpdated?.();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to submit feedback');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    if (!reopenReason.trim()) {
+      Alert.alert('Empty Reason', 'Please enter a reason for reopening');
+      return;
+    }
+
+    if (!complaint?._id && !complaint?.id) {
+      Alert.alert('Error', 'Complaint ID not found');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const complaintId = complaint._id || complaint.id;
+      await requestReopen(complaintId as string, reopenReason, authToken);
+      Alert.alert('Success', 'Reopen request submitted successfully');
+      setReopenReason('');
+      setShowReopenModal(false);
+      onClose();
+      onComplaintUpdated?.();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to request reopening');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 bg-black/50 justify-end">
@@ -90,7 +158,7 @@ export default function ComplaintDetailsModal({
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
                   {media.map((m) => {
-                    const mediaUrl = resolveMediaUrl(m.media_url);
+                    const mediaUrl = resolveMediaUrl(m.media_url) || resolveMediaUrlHelper(m.media_url);
                     if (!mediaUrl) return null;
 
                     return (
@@ -103,10 +171,131 @@ export default function ComplaintDetailsModal({
                   })}
                 </ScrollView>
               )}
+
+              {isResolved && (
+                <View className="flex-row gap-2 mt-4 pt-4 border-t border-slate-200">
+                  <TouchableOpacity
+                    onPress={() => setShowFeedbackModal(true)}
+                    className="flex-1 bg-blue-600 rounded-lg py-3 items-center"
+                    disabled={loading}
+                  >
+                    <Text className="text-white font-semibold">Feedback</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowReopenModal(true)}
+                    className="flex-1 bg-orange-500 rounded-lg py-3 items-center"
+                    disabled={loading}
+                  >
+                    <Text className="text-white font-semibold">Reopen</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </ScrollView>
           ) : null}
         </View>
       </View>
+
+      {/* Feedback Modal */}
+      <Modal visible={showFeedbackModal} transparent animationType="fade" onRequestClose={() => setShowFeedbackModal(false)}>
+        <View className="flex-1 bg-black/50 justify-center items-center p-4">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <Text className="text-lg font-bold text-slate-900 mb-4">Submit Feedback</Text>
+            
+            {/* Rating Section */}
+            <View className="mb-4">
+              <Text className="text-sm text-slate-700 font-semibold mb-2">How would you rate the resolution?</Text>
+              <View className="flex-row justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setFeedbackRating(star)}
+                    disabled={loading}
+                  >
+                    <Feather
+                      name="star"
+                      size={28}
+                      color={star <= feedbackRating ? '#fbbf24' : '#d1d5db'}
+                      fill={star <= feedbackRating ? '#fbbf24' : 'transparent'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Comment Section */}
+            <TextInput
+              multiline
+              numberOfLines={4}
+              placeholder="Any additional comments? (Optional)"
+              placeholderTextColor="#94a3b8"
+              value={feedbackComment}
+              onChangeText={setFeedbackComment}
+              className="border border-slate-300 rounded-lg p-3 text-slate-900 mb-4"
+              editable={!loading}
+            />
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowFeedbackModal(false);
+                  setFeedbackComment('');
+                  setFeedbackRating(0);
+                }}
+                className="flex-1 bg-slate-200 rounded-lg py-3 items-center"
+                disabled={loading}
+              >
+                <Text className="text-slate-800 font-semibold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleFeedback}
+                className="flex-1 bg-blue-600 rounded-lg py-3 items-center"
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-semibold">Submit</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reopen Modal */}
+      <Modal visible={showReopenModal} transparent animationType="fade" onRequestClose={() => setShowReopenModal(false)}>
+        <View className="flex-1 bg-black/50 justify-center items-center p-4">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <Text className="text-lg font-bold text-slate-900 mb-2">Request Reopening</Text>
+            <Text className="text-slate-600 text-sm mb-4">Why do you want to reopen this complaint?</Text>
+            <TextInput
+              multiline
+              numberOfLines={6}
+              placeholder="Please provide a reason..."
+              placeholderTextColor="#94a3b8"
+              value={reopenReason}
+              onChangeText={setReopenReason}
+              className="border border-slate-300 rounded-lg p-3 text-slate-900 mb-4"
+              editable={!loading}
+            />
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowReopenModal(false);
+                  setReopenReason('');
+                }}
+                className="flex-1 bg-slate-200 rounded-lg py-3 items-center"
+                disabled={loading}
+              >
+                <Text className="text-slate-800 font-semibold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleReopen}
+                className="flex-1 bg-orange-500 rounded-lg py-3 items-center"
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-semibold">Request</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 }

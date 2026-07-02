@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useDrawer } from './SideDrawer';
 
 export default function AppBar() {
   const { toggle } = useDrawer();
+  const router = useRouter();
 
   return (
     <View
@@ -38,7 +40,7 @@ export default function AppBar() {
       </Text>
 
       {/* Right - Notification Icon */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push('/citizen/notifications')}>
         <Feather name="bell" size={26} color="white" />
       </TouchableOpacity>
     </View>
