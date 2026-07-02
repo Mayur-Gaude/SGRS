@@ -59,28 +59,72 @@ const EditAdminAreas = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="max-w-md mx-auto bg-white p-6 shadow-md">
-        <h2 className="text-xl mb-4 text-center">
-          Update Admin Areas
-        </h2>
+      <div className="space-y-8 w-full">
+        
+        {/* PAGE TITLE */}
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900">
+            Update Admin Areas
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Modify area assignments for this administrator
+          </p>
+        </div>
 
-        {areas.map((area) => (
-          <div key={area._id}>
-            <input
-              type="checkbox"
-              checked={selectedAreas.includes(area._id)}
-              onChange={() => handleToggle(area._id)}
-            />
-            <span className="ml-2">{area.name}</span>
+        {/* FORM CARD */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <div className="space-y-6">
+            
+            {/* AREAS SECTION */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                Select Areas
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {areas.length > 0 ? (
+                  areas.map((area) => (
+                    <div key={area._id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`area-${area._id}`}
+                        checked={selectedAreas.includes(area._id)}
+                        onChange={() => handleToggle(area._id)}
+                        className="w-4 h-4 text-blue-400 border-gray-300 rounded focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                      />
+                      <label 
+                        htmlFor={`area-${area._id}`}
+                        className="ml-3 text-sm text-gray-700 cursor-pointer"
+                      >
+                        {area.name}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 col-span-full">
+                    No areas available for this department
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-6 border-t border-gray-200 w-fit">
+              <button
+                onClick={handleSubmit}
+                className="bg-blue-400 hover:bg-blue-400 text-white px-8 py-2 rounded-lg font-medium transition-colors duration-150"
+              >
+                Update Areas
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/super-admin/admins")}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        ))}
-
-        <button
-          onClick={handleSubmit}
-          className="bg-blue-500 text-white w-full p-2 mt-4"
-        >
-          Update Areas
-        </button>
+        </div>
       </div>
     </SuperAdminLayout>
   );

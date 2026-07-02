@@ -69,124 +69,154 @@ const CreateBan = () => {
 
   return (
     <SuperAdminLayout>
+      <div className="space-y-8 w-full">
 
-      <div className="p-6">
-
-        <div className="bg-white shadow rounded p-5">
-
-          <h1 className="text-2xl font-bold">
+        {/* PAGE TITLE */}
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900">
             Create Ban
           </h1>
+          <p className="text-gray-600 mt-2">
+            Issue a temporary or permanent ban for user violations
+          </p>
+        </div>
 
-          {/* USER INFO */}
-          <div className="mt-5 bg-gray-100 p-4 rounded">
+        {/* VIOLATION DETAILS CARD */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">
+            Violation Details
+          </h2>
 
-            <p>
-              <span className="font-semibold">
-                User:
-              </span>{" "}
-              {violation.user_id?.full_name}
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                User
+              </p>
+              <p className="text-lg font-semibold text-gray-900 mt-1">
+                {violation.user_id?.full_name}
+              </p>
+            </div>
 
-            <p className="mt-2">
-              <span className="font-semibold">
-                Violation:
-              </span>{" "}
-              {violation.violation_type}
-            </p>
+            <div>
+              <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                Violation Type
+              </p>
+              <p className="text-lg font-semibold text-gray-900 mt-1">
+                {violation.violation_type}
+              </p>
+            </div>
 
-            <p className="mt-2">
-              <span className="font-semibold">
-                Severity:
-              </span>{" "}
-              {violation.severity}
-            </p>
+            <div>
+              <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                Severity
+              </p>
+              <span className="inline-block px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold mt-1">
+                {violation.severity}
+              </span>
+            </div>
 
-            <p className="mt-2">
-              <span className="font-semibold">
-                Suggested Action:
-              </span>{" "}
-              {violation.suggested_action}
-            </p>
+            <div>
+              <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                Suggested Action
+              </p>
+              <p className="text-lg font-semibold text-gray-900 mt-1">
+                {violation.suggested_action}
+              </p>
+            </div>
           </div>
+        </div>
 
-          {/* BAN TYPE */}
-          <div className="mt-5">
+        {/* BAN FORM CARD */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">
+            Ban Configuration
+          </h2>
 
-            <label className="block mb-2">
-              Ban Type
-            </label>
+          <div className="space-y-6">
 
-            <select
-              value={form.ban_type}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  ban_type: e.target.value,
-                })
-              }
-              className="border p-3 rounded w-full"
-            >
-              <option value="TEMPORARY">
-                TEMPORARY
-              </option>
+            {/* BAN TYPE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ban Type
+                </label>
+                <select
+                  value={form.ban_type}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      ban_type: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                >
+                  <option value="TEMPORARY">
+                    TEMPORARY
+                  </option>
+                  <option value="PERMANENT">
+                    PERMANENT
+                  </option>
+                </select>
+              </div>
 
-              <option value="PERMANENT">
-                PERMANENT
-              </option>
-            </select>
-          </div>
+              {/* DURATION */}
+              {form.ban_type === "TEMPORARY" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duration (Days)
+                  </label>
+                  <input
+                    type="number"
+                    value={form.duration_days}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        duration_days: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                    placeholder="Enter number of days"
+                  />
+                </div>
+              )}
+            </div>
 
-          {/* DURATION */}
-          {form.ban_type === "TEMPORARY" && (
-
-            <div className="mt-5">
-
-              <label className="block mb-2">
-                Duration (Days)
+            {/* REASON */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ban Reason
               </label>
-
-              <input
-                type="number"
-                value={form.duration_days}
+              <textarea
+                value={form.ban_reason}
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    duration_days: e.target.value,
+                    ban_reason: e.target.value,
                   })
                 }
-                className="border p-3 rounded w-full"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                placeholder="Explain the reason for this ban"
+                rows="4"
               />
             </div>
-          )}
 
-          {/* REASON */}
-          <div className="mt-5">
-
-            <label className="block mb-2">
-              Ban Reason
-            </label>
-
-            <textarea
-              value={form.ban_reason}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  ban_reason: e.target.value,
-                })
-              }
-              className="border p-3 rounded w-full"
-              placeholder="Explain reason for ban"
-            />
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-6 border-t border-gray-200 w-fit">
+              <button
+                onClick={handleSubmit}
+                className="bg-blue-400 hover:bg-blue-400 text-white px-8 py-2 rounded-lg font-medium transition-colors duration-150"
+              >
+                Create Ban
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/super-admin/management")}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-
-          {/* ACTION */}
-          <button
-            onClick={handleSubmit}
-            className="bg-red-500 text-white px-5 py-2 rounded mt-6"
-          >
-            Create Ban
-          </button>
         </div>
       </div>
     </SuperAdminLayout>

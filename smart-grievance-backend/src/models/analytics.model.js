@@ -34,7 +34,17 @@ const analyticsSchema = new mongoose.Schema({
 
     report_period: {
         type: String,
-        enum: ["DAILY", "MONTHLY", "YEARLY"],
+        enum: ["DAILY", "WEEKLY", "MONTHLY", "CUSTOM"],
+        required: true,
+    },
+
+    period_start: {
+        type: Date,
+        required: true,
+    },
+
+    period_end: {
+        type: Date,
         required: true,
     },
 

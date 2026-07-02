@@ -23,6 +23,11 @@ const violationSchema = new mongoose.Schema({
             "LOCATION_MANIPULATION",
             "HARASSMENT",
             "OTHER",
+            "SPAM",
+            "MISLEADING_INFORMATION",
+            "DUPLICATE_COMPLAINT",
+            "ABUSIVE_LANGUAGE",
+
         ],
         required: true,
     },

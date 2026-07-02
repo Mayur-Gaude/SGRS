@@ -76,9 +76,9 @@ const AnalyticsOverview = () => {
   if (!overview) {
     return (
       <SuperAdminLayout>
-        <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-600 text-lg">Loading analytics dashboard...</p>
-        </div>
+        <p className="p-6">
+          Loading...
+        </p>
       </SuperAdminLayout>
     );
   }
@@ -97,61 +97,61 @@ const AnalyticsOverview = () => {
   return (
     <SuperAdminLayout>
 
-      <div className="space-y-8 w-full">
+      <div className="p-6">
 
         {/* PAGE TITLE */}
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">
             Analytics Dashboard
           </h1>
 
-          <p className="text-gray-600 mt-2">
-            System-wide grievance analytics and insights
+          <p className="text-gray-500 mt-1">
+            System-wide grievance analytics
           </p>
         </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm font-medium uppercase tracking-wide">
+          <div className="bg-white shadow rounded-xl p-5">
+            <p className="text-gray-500">
               Total Complaints
             </p>
 
-            <h2 className="text-4xl font-bold text-blue-400 mt-3">
+            <h2 className="text-3xl font-bold mt-2">
               {overview.total}
             </h2>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm font-medium uppercase tracking-wide">
+          <div className="bg-white shadow rounded-xl p-5">
+            <p className="text-gray-500">
               Resolved
             </p>
 
-            <h2 className="text-4xl font-bold text-blue-400 mt-3">
+            <h2 className="text-3xl font-bold text-green-600 mt-2">
               {overview.resolved}
             </h2>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <p className="text-gray-600 text-sm font-medium uppercase tracking-wide">
+          <div className="bg-white shadow rounded-xl p-5">
+            <p className="text-gray-500">
               Pending
             </p>
 
-            <h2 className="text-4xl font-bold text-blue-400 mt-3">
+            <h2 className="text-3xl font-bold text-orange-500 mt-2">
               {overview.pending}
             </h2>
           </div>
         </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
 
           {/* PIE */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-white shadow rounded-xl p-5">
 
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-              Complaint Status Distribution
+            <h2 className="text-xl font-semibold mb-4">
+              Complaint Status
             </h2>
 
             <ResponsiveContainer
@@ -168,8 +168,8 @@ const AnalyticsOverview = () => {
                   label
                 >
 
-                  <Cell fill="#93c5fd" />
-                  <Cell fill="#60a5fa" />
+                  <Cell fill="#22c55e" />
+                  <Cell fill="#f97316" />
 
                 </Pie>
 
@@ -181,9 +181,9 @@ const AnalyticsOverview = () => {
           </div>
 
           {/* AREA ANALYTICS */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-white shadow rounded-xl p-5">
 
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+            <h2 className="text-xl font-semibold mb-4">
               Top Complaint Areas
             </h2>
 
@@ -194,7 +194,7 @@ const AnalyticsOverview = () => {
 
               <BarChart data={areas}>
 
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <CartesianGrid strokeDasharray="3 3" />
 
                 <XAxis dataKey="area_id" />
 
@@ -202,7 +202,7 @@ const AnalyticsOverview = () => {
 
                 <Tooltip />
 
-                <Bar dataKey="complaintCount" fill="#60a5fa" />
+                <Bar dataKey="complaintCount" />
 
               </BarChart>
 
@@ -211,13 +211,11 @@ const AnalyticsOverview = () => {
         </div>
 
         {/* CATEGORY TABLE */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white shadow rounded-xl p-5 mt-8">
 
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Category Insights
-            </h2>
-          </div>
+          <h2 className="text-xl font-semibold mb-4">
+            Category Insights
+          </h2>
 
           <div className="overflow-x-auto">
 
@@ -225,17 +223,17 @@ const AnalyticsOverview = () => {
 
               <thead>
 
-                <tr className="bg-gray-50 border-b border-gray-200">
+                <tr className="border-b">
 
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                  <th className="text-left py-2">
                     Category
                   </th>
 
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                    Total Complaints
+                  <th className="text-left py-2">
+                    Total
                   </th>
 
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                  <th className="text-left py-2">
                     High Priority
                   </th>
 
@@ -244,25 +242,23 @@ const AnalyticsOverview = () => {
 
               <tbody>
 
-                {categories.map((c, index) => (
+                {categories.map((c) => (
 
                   <tr
                     key={c.category_name}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 last:border-b-0"
+                    className="border-b"
                   >
 
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="py-3">
                       {c.category_name}
                     </td>
 
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td>
                       {c.total}
                     </td>
 
-                    <td className="px-6 py-4 text-sm">
-                      <span className="inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full font-semibold text-xs">
-                        {c.highPriority}
-                      </span>
+                    <td className="text-red-500 font-semibold">
+                      {c.highPriority}
                     </td>
                   </tr>
                 ))}

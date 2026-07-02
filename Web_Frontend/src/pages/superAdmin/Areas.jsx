@@ -37,63 +37,113 @@ const Areas = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="p-6">
-        <div className="flex justify-between mb-4">
-          <h2 className="text-xl">Areas</h2>
+      <div className="space-y-8 w-full">
+
+        {/* PAGE TITLE */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900">
+              Areas
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage geographic areas and their hierarchy
+            </p>
+          </div>
 
           <button
             onClick={() => navigate("/super-admin/create-area")}
-            className="bg-blue-500 text-white px-4 py-2"
+            className="bg-blue-400 hover:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-150"
           >
-            + Create
+            + Create Area
           </button>
         </div>
 
-        <div className="bg-white p-4 shadow-md">
-          {areas.map((area) => (
-            <div
-              key={area._id}
-              className="border p-3 mb-2 flex justify-between"
-            >
-              <div>
-                <p className="font-bold">{area.name}</p>
-                <p className="text-sm">
-                  Dept: {area.department_id?.name}
-                </p>
-                <p className="text-xs">
-                  Parent: {area.parent_area_id?.name || "None"}
-                </p>
+        {/* AREAS TABLE */}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
 
-                <span
-                  className={`text-xs ${
-                    area.is_active ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {area.is_active ? "Active" : "Inactive"}
-                </span>
-              </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() =>
-                    navigate(`/super-admin/create-area/${area._id}`)
-                  }
-                  className="bg-yellow-500 text-white px-3"
-                >
-                  Edit
-                </button>
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Area Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Department
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Parent Area
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
 
-                <button
-                  onClick={() => handleToggle(area)}
-                  className={`px-3 text-white ${
-                    area.is_active ? "bg-red-500" : "bg-green-500"
-                  }`}
-                >
-                  {area.is_active ? "Deactivate" : "Activate"}
-                </button>
-              </div>
+              <tbody>
+                {areas.map((area) => (
+                  <tr
+                    key={area._id}
+                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 last:border-b-0"
+                  >
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      {area.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {area.department_id?.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {area.parent_area_id?.name || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full font-semibold text-xs ${
+                          area.is_active
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {area.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            navigate(`/super-admin/create-area/${area._id}`)
+                          }
+                          className="bg-blue-400 hover:bg-blue-400 text-white px-3 py-1 rounded font-medium transition-colors duration-150"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => handleToggle(area)}
+                          className={`px-3 py-1 rounded font-medium text-white transition-colors duration-150 ${
+                            area.is_active
+                              ? "bg-red-600 hover:bg-red-700"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                        >
+                          {area.is_active ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {areas.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No areas found</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </SuperAdminLayout>

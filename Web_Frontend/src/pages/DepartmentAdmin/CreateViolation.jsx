@@ -15,7 +15,7 @@ const CreateViolation = () => {
     user_id: "",
     complaint_id: "",
     violation_type: "",
-    severity: "LOW",
+    severity: "MINOR",
     reason: "",
   });
 
@@ -41,10 +41,17 @@ const CreateViolation = () => {
     try {
       const res = await createViolation(form);
       
+      // alert(`
+      // Score: ${res.data.data.totalScore}
+      // Suggested Action: ${res.data.data.suggested_action}
+      // `);
+
       alert(`
-      Score: ${res.data.data.totalScore}
-      Suggested Action: ${res.data.data.suggested_action}
+        Score: ${res.data.data.totalScore}
+        Suggested Action: ${res.data.data.suggested_action.action}
+        Reason: ${res.data.data.suggested_action.reason}
       `);
+
       } catch (error) {
         alert(error.response?.data?.message);
       }
@@ -53,140 +60,149 @@ const CreateViolation = () => {
   if (!complaint) {
     return (
       <DeptAdminLayout>
-        <p>Loading...</p>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-gray-600 text-lg">Loading violation form...</p>
+        </div>
       </DeptAdminLayout>
     );
   }
 
   return (
     <DeptAdminLayout>
-      <div className="p-6">
+      <div className="space-y-6 w-full">
 
-        <div className="bg-white shadow rounded p-5">
-          <h1 className="text-2xl font-bold">
+        {/* Header Section */}
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Create Violation
           </h1>
+          <p className="text-gray-600">Record a violation for the rejected complaint</p>
+        </div>
 
-          {/* Complaint Info */}
-          <div className="mt-4 bg-gray-100 p-4 rounded">
-            <p>
-              <span className="font-semibold">
-                Complaint:
-              </span>{" "}
-              {complaint.title}
-            </p>
+        {/* Complaint Info */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Complaint Details</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <p className="text-gray-600 text-xs font-medium uppercase tracking-wide mb-1">Complaint Title</p>
+              <p className="text-gray-900 font-semibold">{complaint.title}</p>
+            </div>
 
-            <p>
-              <span className="font-semibold">
-                User:
-              </span>{" "}
-              {complaint.user_id?.full_name}
-            </p>
+            <div>
+              <p className="text-gray-600 text-xs font-medium uppercase tracking-wide mb-1">User</p>
+              <p className="text-gray-900 font-semibold">{complaint.user_id?.full_name}</p>
+            </div>
+
+            <div>
+              <p className="text-gray-600 text-xs font-medium uppercase tracking-wide mb-1">Complaint ID</p>
+              <p className="text-gray-900 font-semibold">#{complaint.complaint_number}</p>
+            </div>
           </div>
+        </div>
 
-          {/* Violation Type */}
-          <div className="mt-4">
-            <label className="block mb-1">
-              Violation Type
-            </label>
+        {/* Violation Form */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Violation Information</h2>
 
-            {/* <input
-              placeholder="e.g Fake Complaint"
-              value={form.violation_type}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  violation_type: e.target.value,
-                })
-              }
-              className="border p-3 rounded w-full"
-            /> */}
+          <div className="space-y-6">
+            {/* Violation Type and Severity - Side by Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Violation Type */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Violation Type
+                </label>
 
-            <select
-              value={form.violation_type}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  violation_type: e.target.value,
-                })
-              }
-              className="border p-3 rounded w-full"
-            >
-              <option value="">
-                Select Violation
-              </option>
+                <select
+                  value={form.violation_type}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      violation_type: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="">
+                    Select Violation Type
+                  </option>
 
-              <option value="FAKE_COMPLAINT">
-                Fake Complaint
-              </option>
+                  <option value="FAKE_COMPLAINT">
+                    Fake Complaint
+                  </option>
 
-              <option value="SPAM">
-                Spam
-              </option>
+                  <option value="SPAM">
+                    Spam
+                  </option>
 
-              <option value="ABUSIVE_LANGUAGE">
-                Abusive Language
-              </option>
+                  <option value="ABUSIVE_LANGUAGE">
+                    Abusive Language
+                  </option>
 
-              <option value="DUPLICATE_COMPLAINT">
-                Duplicate Complaint
-              </option>
+                  <option value="DUPLICATE_COMPLAINT">
+                    Duplicate Complaint
+                  </option>
 
-              <option value="MISLEADING_INFORMATION">
-                Misleading Information
-              </option>
-            </select>
-          </div>
+                  <option value="MISLEADING_INFORMATION">
+                    Misleading Information
+                  </option>
+                </select>
+              </div>
 
-          {/* Severity */}
-          <div className="mt-4">
-            <label className="block mb-1">
-              Severity
-            </label>
+              {/* Severity */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Severity Level
+                </label>
 
-            <select
-              value={form.severity}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  severity: e.target.value,
-                })
-              }
-              className="border p-3 rounded w-full"
-            >
-              <option value="MINOR">LOW</option>
-              <option value="MODERATE">MEDIUM</option>
-              <option value="SEVERE">HIGH</option>
-              <option value="CRITICAL">CRITICAL</option>
-            </select>
-          </div>
+                <select
+                  value={form.severity}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      severity: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="MINOR">Low</option>
+                  <option value="MODERATE">Medium</option>
+                  <option value="SEVERE">High</option>
+                  <option value="CRITICAL">Critical</option>
+                </select>
+              </div>
+            </div>
 
-          {/* Reason */}
-          <div className="mt-4">
-            <label className="block mb-1">
-              Reason
-            </label>
+            {/* Reason - Full Width */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Reason for Violation
+              </label>
 
-            <textarea
-              placeholder="Explain violation"
-              value={form.reason}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  reason: e.target.value,
-                })
-              }
-              className="border p-3 rounded w-full"
-            />
+              <textarea
+                placeholder="Explain the violation details and reasoning..."
+                value={form.reason}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    reason: e.target.value,
+                  })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                rows="6"
+              />
+            </div>
           </div>
 
           <button
             onClick={handleSubmit}
-            className="bg-red-500 text-white px-5 py-2 rounded mt-5"
+            className="bg-red-600 hover:bg-red-700 text-white font-medium px-8 py-3 rounded-lg transition-colors duration-200 mt-6"
           >
             Submit Violation
           </button>
         </div>
+
       </div>
     </DeptAdminLayout>
   );

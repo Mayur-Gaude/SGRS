@@ -98,12 +98,36 @@ const complaintSchema = new mongoose.Schema(
             default: "LOW",
         },
 
+        risk_reasons: {
+            type: [String],
+            default: [],
+        },
+
         feedback_submitted: {
             type: Boolean,
             default: false,
         },
 
         reopen_count: {
+            type: Number,
+            default: 0,
+        },
+        resolved_at: {
+            type: Date,
+            default: null,
+        },
+
+        sla_response_met: {
+            type: Boolean,
+            default: false,
+        },
+
+        sla_resolution_met: {
+            type: Boolean,
+            default: false,
+        },
+
+        escalation_level: {
             type: Number,
             default: 0,
         },

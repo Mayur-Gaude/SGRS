@@ -32,6 +32,12 @@ import AppealReview from "../pages/superAdmin/AppealReview";
 import ViolationHistory from "../pages/DepartmentAdmin/ViolationHistory";
 import ViolationManagement from "../pages/superAdmin/ViolationManagement";
 import ProtectedRoute from "./ProtectedRoute";
+import AnalyticsOverview from "../pages/superAdmin/AnalyticsOverview"
+import DepartmentAnalytics from "../pages/DepartmentAdmin/DepartmentAnalytics"
+import AreaAnalytics from "../pages/superAdmin/AreaAnalytics";
+import CategoryAnalytics from "../pages/superAdmin/CategoryAnalytics";
+import Reports from "../pages/superAdmin/Reports";
+import AdminPerformance from "../pages/superAdmin/AdminPerformance";
 
 const AppRoutes = () => {
   return (
@@ -165,6 +171,39 @@ const AppRoutes = () => {
       <Route
         path="/super-admin/management"
         element={<ViolationManagement />}
+      />
+
+
+
+      {/* Analytics */}
+      <Route
+        path="/super-admin/analytics"
+        element={<AnalyticsOverview />}
+      />
+
+      <Route
+        path="/dept-admin/analytics"
+        element={<DepartmentAnalytics />}
+      />
+
+      <Route
+        path="/super-admin/analytics/areas"
+        element={<AreaAnalytics />}
+      />
+
+      <Route
+        path="/super-admin/analytics/categories"
+        element={<CategoryAnalytics />}
+      />
+
+      <Route
+        path="/super-admin/reports"
+        element={<Reports />}
+      />
+
+      <Route
+        path="/super-admin/admin-performance"
+        element={<AdminPerformance />}
       />
       </Routes>
     </BrowserRouter>

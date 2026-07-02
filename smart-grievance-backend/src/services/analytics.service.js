@@ -1,3 +1,4 @@
+//analytics.service.js
 import Complaint from "../models/complaint.model.js";
 import Analytics from "../models/analytics.model.js";
 
@@ -60,7 +61,7 @@ export const getResolutionMetrics = async (departmentId) => {
     }
 
     const totalTime = resolvedComplaints.reduce((sum, c) => {
-        const created = new Date(c.created_at);
+        const created = new Date(c.createdAt);
         const resolved = new Date(c.resolved_at);
 
         const diffHours = (resolved - created) / (1000 * 60 * 60);
@@ -76,13 +77,13 @@ export const getResolutionMetrics = async (departmentId) => {
 // 2. Area Analytics
 export const getAreaAnalytics = async () => {
 
-    const complaints = await Complaint.find();
-
+    // const complaints = await Complaint.find();
+    const complaints = await Complaint.find().populate("area_id", "name");
     const areaMap = {};
 
     complaints.forEach(c => {
-        const area = c.area_id?.toString() || "UNKNOWN";
-
+        // const area = c.area_id?.toString() || "UNKNOWN";
+        const area = c.area_id?.name || "UNKNOWN";
         if (!areaMap[area]) {
             areaMap[area] = 0;
         }
@@ -105,13 +106,14 @@ export const getAreaAnalytics = async () => {
 //  Category Analytics
 export const getCategoryAnalytics = async () => {
 
-    const complaints = await Complaint.find();
+    const complaints = await Complaint.find().populate("category_id", "name");
 
     const categoryMap = {};
 
     complaints.forEach(c => {
-        const category = c.category_id?.toString() || "UNKNOWN";
+        // const category = c.category_id?.toString() || "UNKNOWN";
 
+        const category = c.category_id?.name || "UNKNOWN";
         if (!categoryMap[category]) {
             categoryMap[category] = {
                 count: 0,
@@ -127,7 +129,8 @@ export const getCategoryAnalytics = async () => {
     });
 
     const result = Object.keys(categoryMap).map(cat => ({
-        category_id: cat,
+        // category_id: cat,
+        category_name: cat,
         total: categoryMap[cat].count,
         highPriority: categoryMap[cat].highPriority,
     }));
@@ -139,58 +142,214 @@ export const getCategoryAnalytics = async () => {
 
 
 // 3. Generate Report
+// export const generateAnalyticsReport = async ({
+//     departmentId,
+//     report_period,
+//     generated_by,
+// }) => {
+
+//     const complaints = await Complaint.find({
+//         department_id: departmentId,
+//     });
+
+//     const total = complaints.length;
+
+//     const resolved = complaints.filter(c => c.status === "RESOLVED").length;
+//     const pending = complaints.filter(c =>
+//         ["SUBMITTED", "UNDER_REVIEW"].includes(c.status)
+//     ).length;
+
+//     // ⏱ Avg Resolution Time
+//     const resolvedComplaints = complaints.filter(
+//         c => c.status === "RESOLVED" && c.resolved_at
+//     );
+
+//     let avgResolution = 0;
+
+//     if (resolvedComplaints.length > 0) {
+//         const totalTime = resolvedComplaints.reduce((sum, c) => {
+//             const diff =
+//                 (new Date(c.resolved_at) - new Date(c.createdAt)) /
+//                 (1000 * 60 * 60);
+//             return sum + diff;
+//         }, 0);
+
+//         avgResolution = totalTime / resolvedComplaints.length;
+//     }
+
+//     // 📈 SLA Compliance
+//     const slaMet = complaints.filter(c => c.sla_resolution_met).length;
+//     const slaCompliance =
+//         total === 0 ? 0 : (slaMet / total) * 100;
+
+//     // 💾 Save Report
+//     const report = await Analytics.create({
+//         department_id: departmentId,
+//         total_complaints: total,
+//         resolved_complaints: resolved,
+//         pending_complaints: pending,
+//         avg_resolution_hours: avgResolution,
+//         sla_compliance_percent: slaCompliance,
+//         report_period,
+//         report_date: new Date(),
+//         generated_by,
+//     });
+
+//     return report;
+// };
+
 export const generateAnalyticsReport = async ({
     departmentId,
     report_period,
     generated_by,
+    start_date,
+    end_date,
 }) => {
+
+    let start;
+    let end = new Date();
+
+    // DAILY
+    if (report_period === "DAILY") {
+
+        start = new Date();
+        start.setHours(0, 0, 0, 0);
+    }
+
+    // WEEKLY
+    else if (report_period === "WEEKLY") {
+
+        start = new Date();
+        start.setDate(end.getDate() - 7);
+    }
+
+    // MONTHLY
+    else if (report_period === "MONTHLY") {
+
+        start = new Date();
+        start.setMonth(end.getMonth() - 1);
+    }
+
+    // CUSTOM
+    // else if (report_period === "CUSTOM") {
+
+    //     start = new Date(start_date);
+    //     end = new Date(end_date);
+    // }
+
+    else if (report_period === "CUSTOM") {
+
+        if (!start_date || !end_date) {
+            throw new Error(
+                "Start date and end date are required"
+            );
+        }
+
+        start = new Date(start_date);
+        end = new Date(end_date);
+
+        // Validate dates
+        if (
+            isNaN(start.getTime()) ||
+            isNaN(end.getTime())
+        ) {
+            throw new Error("Invalid custom dates");
+        }
+
+        // Set full-day range
+        start.setHours(0, 0, 0, 0);
+
+        end.setHours(23, 59, 59, 999);
+    }
 
     const complaints = await Complaint.find({
         department_id: departmentId,
+
+        createdAt: {
+            $gte: start,
+            $lte: end,
+        },
     });
 
     const total = complaints.length;
 
-    const resolved = complaints.filter(c => c.status === "RESOLVED").length;
-    const pending = complaints.filter(c =>
-        ["SUBMITTED", "UNDER_REVIEW"].includes(c.status)
+    const resolved = complaints.filter(
+        c => c.status === "RESOLVED"
     ).length;
 
-    // ⏱ Avg Resolution Time
-    const resolvedComplaints = complaints.filter(
-        c => c.status === "RESOLVED" && c.resolved_at
-    );
+    const pending = complaints.filter(c =>
+        ["SUBMITTED", "UNDER_REVIEW"]
+            .includes(c.status)
+    ).length;
+
+    const resolvedComplaints =
+        complaints.filter(
+            c =>
+                c.status === "RESOLVED" &&
+                c.resolved_at
+        );
 
     let avgResolution = 0;
 
     if (resolvedComplaints.length > 0) {
-        const totalTime = resolvedComplaints.reduce((sum, c) => {
-            const diff =
-                (new Date(c.resolved_at) - new Date(c.created_at)) /
-                (1000 * 60 * 60);
-            return sum + diff;
-        }, 0);
 
-        avgResolution = totalTime / resolvedComplaints.length;
+        const totalTime =
+            resolvedComplaints.reduce(
+                (sum, c) => {
+
+                    const diff =
+                        (
+                            new Date(c.resolved_at) -
+                            new Date(c.createdAt)
+                        ) /
+                        (1000 * 60 * 60);
+
+                    return sum + diff;
+                },
+                0
+            );
+
+        avgResolution =
+            totalTime /
+            resolvedComplaints.length;
     }
 
-    // 📈 SLA Compliance
-    const slaMet = complaints.filter(c => c.sla_resolution_met).length;
-    const slaCompliance =
-        total === 0 ? 0 : (slaMet / total) * 100;
+    const slaMet =
+        complaints.filter(
+            c => c.sla_resolution_met
+        ).length;
 
-    // 💾 Save Report
-    const report = await Analytics.create({
-        department_id: departmentId,
-        total_complaints: total,
-        resolved_complaints: resolved,
-        pending_complaints: pending,
-        avg_resolution_hours: avgResolution,
-        sla_compliance_percent: slaCompliance,
-        report_period,
-        report_date: new Date(),
-        generated_by,
-    });
+    const slaCompliance =
+        total === 0
+            ? 0
+            : (slaMet / total) * 100;
+
+    const report =
+        await Analytics.create({
+
+            department_id: departmentId,
+
+            total_complaints: total,
+
+            resolved_complaints: resolved,
+
+            pending_complaints: pending,
+
+            avg_resolution_hours: avgResolution,
+
+            sla_compliance_percent:
+                slaCompliance,
+
+            report_period,
+
+            period_start: start,
+
+            period_end: end,
+
+            report_date: new Date(),
+
+            generated_by,
+        });
 
     return report;
 };
@@ -229,7 +388,7 @@ export const getAdminPerformance = async (adminId) => {
     if (resolvedComplaints.length > 0) {
         const totalTime = resolvedComplaints.reduce((sum, c) => {
             const diff =
-                (new Date(c.resolved_at) - new Date(c.created_at)) /
+                (new Date(c.resolved_at) - new Date(c.createdAt)) /
                 (1000 * 60 * 60);
 
             return sum + diff;

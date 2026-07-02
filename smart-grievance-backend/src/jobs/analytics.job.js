@@ -1,3 +1,4 @@
+//analytics.job.js
 import cron from "node-cron";
 import Department from "../models/department.model.js";
 import { generateAnalyticsReport } from "../services/analytics.service.js";

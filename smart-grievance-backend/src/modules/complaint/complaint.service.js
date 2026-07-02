@@ -73,6 +73,8 @@ export const submitComplaint = async (data, currentUser) => {
         title,
         description,
     });
+
+    // console.log("Risk:", risk);
     // Calculate SLA
     const { responseDeadline, resolutionDeadline } =
         calculateSLA(category);
@@ -92,6 +94,7 @@ export const submitComplaint = async (data, currentUser) => {
         priority: category.priority,
         risk_level: risk.level,
         risk_score: risk.score,
+        risk_reasons: risk.reasons,
         sla_response_deadline: responseDeadline,
         sla_resolution_deadline: resolutionDeadline,
     });

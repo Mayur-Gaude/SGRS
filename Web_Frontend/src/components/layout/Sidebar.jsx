@@ -48,6 +48,36 @@ const Sidebar = () => {
           </Link>
         </li>
         
+        {/* <li>
+          <Link to="/super-admin/analytics">
+            Analytics
+          </Link>
+        </li> */}
+
+        <li>
+          <Link to="/super-admin/analytics/areas">
+            Area Analytics
+          </Link>
+        </li>
+
+        <li>
+          <Link to="/super-admin/analytics/categories">
+            Category Analytics
+          </Link>
+        </li>
+
+        <li>
+          <Link to="/super-admin/reports">
+            Reports
+          </Link>
+        </li>
+
+        <li>
+          <Link to="/super-admin/admin-performance">
+            Admin Performance
+          </Link>
+        </li>
+
         <li>
           <button onClick={handleLogout} className="text-red-400">
             Logout

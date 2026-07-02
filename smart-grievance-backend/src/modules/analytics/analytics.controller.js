@@ -1,3 +1,4 @@
+//analytics.controller.js
 import {
     getDepartmentAnalytics,
     getSLAMetrics,
@@ -86,13 +87,21 @@ export const getCategoryInsights = async (req, res, next) => {
 export const generateReport = async (req, res, next) => {
     try {
 
-        const { departmentId, report_period } = req.body;
-
-        const report = await generateAnalyticsReport({
+        const {
             departmentId,
             report_period,
-            generated_by: req.user._id,
-        });
+            start_date,
+            end_date,
+        } = req.body;
+
+        const report =
+            await generateAnalyticsReport({
+                departmentId,
+                report_period,
+                start_date,
+                end_date,
+                generated_by: req.user._id,
+            });
 
         return successResponse(res, report);
 

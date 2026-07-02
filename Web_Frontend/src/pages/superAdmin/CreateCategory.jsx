@@ -68,89 +68,140 @@ const CreateCategory = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="max-w-md mx-auto bg-white p-6 shadow-md">
-        <h2 className="text-xl mb-4 text-center">
-          {isEdit ? "Update Category" : "Create Category"}
-        </h2>
+      <div className="space-y-8 w-full">
+        
+        {/* PAGE TITLE */}
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900">
+            {isEdit ? "Update Category" : "Create Category"}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {isEdit ? "Modify category information" : "Add a new complaint category to the system"}
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Name */}
-          <input
-            type="text"
-            placeholder="Category Name"
-            className="border p-2 w-full mb-3"
-            value={form.name}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
-          />
+        {/* FORM CARD */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* FORM SECTION */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter category name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors duration-150"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm({ ...form, name: e.target.value })
+                  }
+                />
+              </div>
 
-          {/* Department Dropdown */}
-          <select
-            className="border p-2 w-full mb-3"
-            value={form.department_id}
-            onChange={(e) =>
-              setForm({ ...form, department_id: e.target.value })
-            }
-          >
-            <option value="">Select Department</option>
-            {departments.map((dept) => (
-              <option key={dept._id} value={dept._id}>
-                {dept.name} ({dept.code})
-              </option>
-            ))}
-          </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors duration-150"
+                  value={form.department_id}
+                  onChange={(e) =>
+                    setForm({ ...form, department_id: e.target.value })
+                  }
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name} ({dept.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Description */}
-          <input
-            type="text"
-            placeholder="Description"
-            className="border p-2 w-full mb-3"
-            value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
-          />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Priority Level
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors duration-150"
+                  value={form.priority}
+                  onChange={(e) =>
+                    setForm({ ...form, priority: e.target.value })
+                  }
+                >
+                  <option value="LOW">LOW</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                </select>
+              </div>
 
-          {/* Priority */}
-          <select
-            className="border p-2 w-full mb-3"
-            value={form.priority}
-            onChange={(e) =>
-              setForm({ ...form, priority: e.target.value })
-            }
-          >
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-          </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter description"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors duration-150"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                />
+              </div>
 
-          {/* SLA Response */}
-          <input
-            type="number"
-            placeholder="SLA Response Hours"
-            className="border p-2 w-full mb-3"
-            value={form.sla_response_hours}
-            onChange={(e) =>
-              setForm({ ...form, sla_response_hours: e.target.value })
-            }
-          />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  SLA Response Hours
+                </label>
+                <input
+                  type="number"
+                  placeholder="Enter response hours"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors duration-150"
+                  value={form.sla_response_hours}
+                  onChange={(e) =>
+                    setForm({ ...form, sla_response_hours: e.target.value })
+                  }
+                />
+              </div>
 
-          {/* SLA Resolution */}
-          <input
-            type="number"
-            placeholder="SLA Resolution Hours"
-            className="border p-2 w-full mb-3"
-            value={form.sla_resolution_hours}
-            onChange={(e) =>
-              setForm({ ...form, sla_resolution_hours: e.target.value })
-            }
-          />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  SLA Resolution Hours
+                </label>
+                <input
+                  type="number"
+                  placeholder="Enter resolution hours"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors duration-150"
+                  value={form.sla_resolution_hours}
+                  onChange={(e) =>
+                    setForm({ ...form, sla_resolution_hours: e.target.value })
+                  }
+                />
+              </div>
+            </div>
 
-          <button className="bg-blue-500 text-white w-full p-2">
-            {isEdit ? "Update" : "Create"}
-          </button>
-        </form>
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-6 border-t border-gray-200 w-fit">
+              <button 
+                type="submit"
+                className="bg-blue-400 hover:bg-blue-400 text-white px-8 py-2 rounded-lg font-medium transition-colors duration-150"
+              >
+                {isEdit ? "Update Category" : "Create Category"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/super-admin/categories")}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </SuperAdminLayout>
   );

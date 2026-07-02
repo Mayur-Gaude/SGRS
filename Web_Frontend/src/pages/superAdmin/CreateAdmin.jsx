@@ -107,82 +107,153 @@ const CreateAdmin = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="max-w-md mx-auto bg-white p-6 shadow-md">
-        <h2 className="text-xl mb-4 text-center">
-          {isEdit ? "Edit Admin" : "Create Admin"}
-        </h2>
+      <div className="space-y-8 w-full">
+        
+        {/* PAGE TITLE */}
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900">
+            {isEdit ? "Edit Admin" : "Create Admin"}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {isEdit ? "Modify administrator information" : "Add a new department administrator"}
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="border p-2 w-full mb-3"
-            value={form.full_name}
-            onChange={(e) =>
-              setForm({ ...form, full_name: e.target.value })
-            }
-          />
+        {/* FORM CARD */}
+        <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* FORM SECTION */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter full name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                  value={form.full_name}
+                  onChange={(e) =>
+                    setForm({ ...form, full_name: e.target.value })
+                  }
+                />
+              </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            className="border p-2 w-full mb-3"
-            value={form.email}
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter email address"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm({ ...form, email: e.target.value })
+                  }
+                />
+              </div>
 
-          <input
-            type="text"
-            placeholder="Phone"
-            className="border p-2 w-full mb-3"
-            value={form.phone}
-            onChange={(e) =>
-              setForm({ ...form, phone: e.target.value })
-            }
-          />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter phone number"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm({ ...form, phone: e.target.value })
+                  }
+                />
+              </div>
 
-          {!isEdit && (
-            <input
-              type="password"
-              placeholder="Password"
-              className="border p-2 w-full mb-3"
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-            />
-          )}
+              {!isEdit && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Enter password"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                    onChange={(e) =>
+                      setForm({ ...form, password: e.target.value })
+                    }
+                  />
+                </div>
+              )}
 
-          <select
-            className="border p-2 w-full mb-3"
-            value={form.department_id}
-            onChange={(e) => handleDepartmentChange(e.target.value)}
-          >
-            <option value="">Select Department</option>
-            {departments.map((d) => (
-              <option key={d._id} value={d._id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+              <div className={isEdit ? "md:col-span-2" : ""}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-colors duration-150"
+                  value={form.department_id}
+                  onChange={(e) => handleDepartmentChange(e.target.value)}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((d) => (
+                    <option key={d._id} value={d._id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Areas */}
-          {areas.map((area) => (
-            <div key={area._id}>
-              <input
-                type="checkbox"
-                checked={form.area_ids.includes(area._id)}
-                onChange={() => handleAreaSelect(area._id)}
-              />
-              <span className="ml-2">{area.name}</span>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Assigned Areas
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {areas.length > 0 ? (
+                    areas.map((area) => (
+                      <div key={area._id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`area-${area._id}`}
+                          checked={form.area_ids.includes(area._id)}
+                          onChange={() => handleAreaSelect(area._id)}
+                          className="w-4 h-4 text-blue-400 border-gray-300 rounded focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                        />
+                        <label 
+                          htmlFor={`area-${area._id}`}
+                          className="ml-3 text-sm text-gray-700 cursor-pointer"
+                        >
+                          {area.name}
+                        </label>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Select a department first to see available areas
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          ))}
 
-          <button className="bg-blue-500 text-white w-full p-2 mt-3">
-            {isEdit ? "Update" : "Create"}
-          </button>
-        </form>
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-6 border-t border-gray-200 w-fit">
+              <button 
+                type="submit"
+                className="bg-blue-400 hover:bg-blue-400 text-white px-8 py-2 rounded-lg font-medium transition-colors duration-150"
+              >
+                {isEdit ? "Update Admin" : "Create Admin"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/super-admin/admins")}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </SuperAdminLayout>
   );

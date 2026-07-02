@@ -4,6 +4,8 @@ import userModel from "../../models/user.model.js";
 import {
     calculateUserScore,
     getSuggestedAction,
+    getRecentViolations,
+    getPointsFromSeverity,
 } from "../../services/violationScore.service.js";
 
 export const createViolation = async (data, currentUser) => {
@@ -36,17 +38,49 @@ export const createViolation = async (data, currentUser) => {
     });
 
     // Fetch all violations of user
+    // const userViolations = await Violation.find({ user_id });
+
+    // const totalScore = calculateUserScore(userViolations);
+
+
     const userViolations = await Violation.find({ user_id });
 
-    const totalScore = calculateUserScore(userViolations);
+    const activeViolations =
+        getRecentViolations(userViolations, 12);
 
-    const suggested_action = getSuggestedAction(
-        totalScore,
-        severity
-    );
+    const totalScore =
+        calculateUserScore(activeViolations);
+
+    // console.log("Userviolations", userViolations);
+    // console.log("Activeviolations", activeViolations);
+
+    // const suggested_action = getSuggestedAction(
+    //     totalScore,
+    //     severity
+    // );
+
+    const suggested_action = getSuggestedAction({
+        score: totalScore,
+        violations: activeViolations,
+    });
+
+    // if (
+    //     suggested_action.action === "TEMP_BAN"
+    // ) {
+    //     await userModel.findByIdAndUpdate(
+    //         user_id,
+    //         {
+    //             account_status: "SUSPENDED",
+    //         }
+    //     );
+    // }
 
 
-    const shouldWarn = totalScore >= 20;
+    // const shouldWarn = totalScore >= 20;
+
+    const shouldWarn =
+        ["WARNING", "TEMP_BAN", "REVIEW_FOR_PERMANENT_BAN"]
+            .includes(suggested_action.action);
 
     return {
         violation,
@@ -102,40 +136,53 @@ export const getViolationManagement = async () => {
         grouped[userId].violations.push(v);
 
         // score calculation
-        switch (v.severity) {
+        // switch (v.severity) {
 
-            case "LOW":
-                grouped[userId].total_score += 10;
-                break;
+        //     case "MINOR":
+        //         grouped[userId].total_score += 10;
+        //         break;
 
-            case "MEDIUM":
-                grouped[userId].total_score += 20;
-                break;
+        //     case "MODERATE":
+        //         grouped[userId].total_score += 20;
+        //         break;
 
-            case "HIGH":
-                grouped[userId].total_score += 40;
-                break;
+        //     case "SEVERE":
+        //         grouped[userId].total_score += 40;
+        //         break;
 
-            case "CRITICAL":
-                grouped[userId].total_score += 70;
-                break;
-        }
+        //     case "CRITICAL":
+        //         grouped[userId].total_score += 70;
+        //         break;
+        // }
+
+        grouped[userId].total_score +=
+            getPointsFromSeverity(v.severity);
     }
 
     // Suggested action
+    // Object.values(grouped).forEach((u) => {
+
+    //     if (u.total_score >= 100) {
+    //         u.suggested_action = "PERMANENT_BAN";
+    //     }
+
+    //     else if (u.total_score >= 50) {
+    //         u.suggested_action = "TEMP_BAN";
+    //     }
+
+    //     else if (u.total_score >= 20) {
+    //         u.suggested_action = "WARNING";
+    //     }
+    // });
+
     Object.values(grouped).forEach((u) => {
 
-        if (u.total_score >= 100) {
-            u.suggested_action = "PERMANENT_BAN";
-        }
+        const action = getSuggestedAction({
+            score: u.total_score,
+            violations: u.violations,
+        });
 
-        else if (u.total_score >= 50) {
-            u.suggested_action = "TEMP_BAN";
-        }
-
-        else if (u.total_score >= 20) {
-            u.suggested_action = "WARNING";
-        }
+        u.suggested_action = action;
     });
 
     return Object.values(grouped);

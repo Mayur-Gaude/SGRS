@@ -269,6 +269,11 @@ export const loginUser = async ({ email, password }) => {
             full_name: user.full_name,
             email: user.email,
             role: user.role,
+            department_id:
+                user.department_id,
+            area_ids:
+                user.area_ids,
+
             account_status:
                 user.account_status,
 
@@ -305,7 +310,21 @@ export const verify2FA = async ({ user_id, otp_code }) => {
         token,
         user: {
             id: user._id,
+            full_name: user.full_name,
+            email: user.email,
             role: user.role,
+
+            department_id:
+                user.department_id,
+
+            area_ids:
+                user.area_ids,
+
+            account_status:
+                user.account_status,
+
+            account_reason:
+                user.account_reason,
         },
     };
 };
