@@ -32,3 +32,14 @@ export const markAllNotificationsRead = async (currentUser) => {
 
   return { success: true };
 };
+
+export const deleteNotification = async (notificationId, currentUser) => {
+  const item = await Notification.findOneAndDelete({
+    _id: notificationId,
+    user_id: currentUser._id,
+  });
+
+  if (!item) throw new Error("Notification not found");
+
+  return { success: true, deletedId: notificationId, wasUnread: !item.is_read };
+};
