@@ -43,13 +43,17 @@ export const getSystemOverview = async (req, res, next) => {
 
         const resolved = await Complaint.countDocuments({ status: "RESOLVED" });
         const pending = await Complaint.countDocuments({
-            status: { $in: ["SUBMITTED", "UNDER_REVIEW"] },
+            status: { $in: ["SUBMITTED", "IN_PROGRESS", "REOPENED", "REOPEN_REQUESTED"] },
         });
+        const under_review = await Complaint.countDocuments({ status: "UNDER_REVIEW" });
+        const rejected = await Complaint.countDocuments({ status: "REJECTED" });
 
         return successResponse(res, {
             total,
             resolved,
             pending,
+            under_review,
+            rejected
         });
 
     } catch (error) {

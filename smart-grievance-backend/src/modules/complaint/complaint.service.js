@@ -15,6 +15,7 @@ import { createUserNotification } from "../../services/notification.service.js";
 import { sendComplaintStatusUpdateEmail } from "../../services/email.service.js";
 
 import { calculateComplaintRisk } from "../../services/ComplaintRisk.service.js";
+import ComplaintMedia from "../../models/complaintMedia.model.js";
 
 // ======================================================
 // 1️⃣ SUBMIT COMPLAINT
@@ -225,12 +226,28 @@ export const getComplaintById = async (id, currentUser) => {
         throw new Error("Unauthorized access");
     }
 
-    const timeline = await ComplaintTimeline.find({
-        complaint_id: id,
-    }).sort({ createdAt: 1 });
+    // const timeline = await ComplaintTimeline.find({
+    //     complaint_id: id,
+    // }).sort({ createdAt: 1 });
+
+    // return {
+    //     complaint,
+    //     timeline,
+    // };
+
+    const [timeline, media] = await Promise.all([
+        ComplaintTimeline.find({
+            complaint_id: id,
+        }).sort({ createdAt: 1 }),
+
+        ComplaintMedia.find({
+            complaint_id: id,
+        }).populate("uploaded_by", "full_name"),
+    ]);
 
     return {
         complaint,
+        media,
         timeline,
     };
 };

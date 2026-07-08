@@ -52,7 +52,7 @@ const AnalyticsOverview = () => {
         ]);
 
         setOverview(
-          overviewRes.data.data
+          overviewRes.data.data,
         );
 
         setAreas(
@@ -140,6 +140,26 @@ const AnalyticsOverview = () => {
 
             <h2 className="text-4xl font-bold text-blue-400 mt-3">
               {overview.pending}
+            </h2>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <p className="text-gray-600 text-sm font-medium uppercase tracking-wide">
+              Rejected
+            </p>
+
+            <h2 className="text-4xl font-bold text-blue-400 mt-3">
+              {overview.rejected}
+            </h2>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <p className="text-gray-600 text-sm font-medium uppercase tracking-wide">
+              Under_Review
+            </p>
+
+            <h2 className="text-4xl font-bold text-blue-400 mt-3">
+              {overview.under_review}
             </h2>
           </div>
         </div>

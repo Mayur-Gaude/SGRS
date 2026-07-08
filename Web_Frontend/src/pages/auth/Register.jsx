@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { registerUser } from "../../api/auth.api";
 import { useNavigate } from "react-router-dom";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
+import { Eye, EyeOff } from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -14,26 +16,75 @@ const Register = () => {
     password: "",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   try {
+
+  //     if (form.password !== form.confirmPassword) {
+  //       alert("Passwords do not match");
+  //       return;
+  //     }
+      
+  //     // const res = await registerUser(form);
+  //     const { confirmPassword, ...payload } = form;
+  //     const res = await registerUser(payload);
+  //     const data = res.data.data;
+
+  //     // 🔥 Move to OTP screen
+  //     navigate("/verify-otp", {
+  //       state: {
+  //         user_id: data.user_id,
+  //         email: form.email,
+  //         phone: form.phone,
+  //       },
+  //     });
+
+  //   } catch (err) {
+  //     alert(err.response?.data?.message || "Registration failed");
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const res = await registerUser(form);
-      const data = res.data.data;
+  if (
+    !form.full_name.trim() ||
+    !form.email.trim() ||
+    !form.phone.trim() ||
+    !form.password.trim() ||
+    !form.confirmPassword.trim()
+  ) {
+    alert("Please fill all fields");
+    return;
+  }
 
-      // 🔥 Move to OTP screen
-      navigate("/verify-otp", {
-        state: {
-          user_id: data.user_id,
-          email: form.email,
-          phone: form.phone,
-        },
-      });
+  if (form.password !== form.confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
 
-    } catch (err) {
-      alert(err.response?.data?.message || "Registration failed");
-    }
-  };
+  try {
+    const { confirmPassword, ...payload } = form;
+
+    const res = await registerUser(payload);
+
+    const data = res.data.data;
+
+    navigate("/verify-otp", {
+      state: {
+        user_id: data.user_id,
+        email: form.email,
+        phone: form.phone,
+      },
+    });
+  } catch (err) {
+    alert(err.response?.data?.message || "Registration failed");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
@@ -54,6 +105,7 @@ const Register = () => {
             <Input
               type="text"
               placeholder="Full Name"
+              value={form.full_name}
               onChange={(e) =>
                 setForm({ ...form, full_name: e.target.value })
               }
@@ -62,26 +114,71 @@ const Register = () => {
             <Input
               type="email"
               placeholder="Email Address"
+              value={form.email}
               onChange={(e) =>
                 setForm({ ...form, email: e.target.value })
               }
             />
 
             <Input
-              type="text"
+              type="tel"
               placeholder="Phone Number"
+              value={form.phone}
               onChange={(e) =>
                 setForm({ ...form, phone: e.target.value })
               }
             />
 
-            <Input
-              type="password"
-              placeholder="Password"
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={form.password}
+                className="pr-10"
+                autoComplete="new-password"
+                onChange={(e) =>
+                  setForm({ ...form, password: e.target.value })
+                }
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={form.confirmPassword}
+                className="pr-10"
+                autoComplete="new-password"
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    confirmPassword: e.target.value,
+                  })
+                }
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowConfirmPassword(!showConfirmPassword)
+                }
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff size={20} />
+                ) : (
+                  <Eye size={20} />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Register Button */}
@@ -103,16 +200,19 @@ const Register = () => {
           <div className="text-center text-sm">
             <p className="text-blue-700">
               Already have an account?{" "}
-              <a href="/" className="text-blue-600 hover:text-blue-700 font-semibold underline transition">
+              {/* <a href="/" className="text-blue-600 hover:text-blue-700 font-semibold underline transition">
                 Sign In
-              </a>
+              </a> */}
+              <Link to="/" className="text-blue-600 hover:text-blue-700 font-semibold underline transition">
+                Sign In
+              </Link>
             </p>
           </div>
 
           {/* Footer */}
           <div className="mt-6 pt-6 border-t border-blue-100">
             <p className="text-center text-xs text-blue-500">
-              © 2024 Smart Grievance System. All rights reserved.
+              © 2026 Smart Grievance System. All rights reserved.
             </p>
           </div>
         </form>
